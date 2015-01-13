@@ -8,7 +8,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 SET(CMAKE_CXX_FLAGS "-std=gnu++11")
 
 # Find the QtWidgets library
-find_package(Qt5Network)
+find_package(Qt5 REQUIRED Core Network)
 
 # Tell CMake to create the helloworld executable
 add_executable(s20 s20.cpp)
