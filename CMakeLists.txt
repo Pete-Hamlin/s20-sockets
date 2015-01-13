@@ -4,7 +4,8 @@ project(s20)
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Instruct CMake to run moc automatically when needed.
-set(CMAKE_AUTOMOC ON)
+# set(CMAKE_AUTOMOC OFF)
+SET(CMAKE_CXX_FLAGS "-std=gnu++11")
 
 # Find the QtWidgets library
 find_package(Qt5Network)

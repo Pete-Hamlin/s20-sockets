@@ -20,78 +20,68 @@
 #include <QHostAddress>
 #include <QUdpSocket>
 
-class Server : public QObject
+class Socket : public QObject
 {
-Q_OBJECT
 public:
-	Server();
-
-	bool received;
-
-private slots:
-	void readPendingDatagrams();
+    Socket();
 
 private:
-	QByteArray* makeNewDatagram();
+    void readPendingDatagrams();
+    QByteArray* makeNewDatagram();
 
-	QUdpSocket *udpSocketSend;
-	QUdpSocket *udpSocketGet;
+    QUdpSocket *udpSocketSend;
+    QUdpSocket *udpSocketGet;
+    QHostAddress socketIPAddress;
+
+    enum {Discover, Subscribe, PowerOff, PowerOn};
+    QByteArray datagram[4] = {
+        QByteArray::fromHex("68 64 00 06 71 61"), // global discovery
+        QByteArray::fromHex("68 64 00 1e 63 6c ac cf 23 35 f5 8c 20 20 20 20 20 20 8c f5 35 23 cf ac 20 20 20 20 20 20"), // subscribe
+        QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 00"), // power off
+        QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 01") // power on
+    };
 };
 
 
-Server::Server(){
-	received = false;
-	udpSocketSend = new QUdpSocket();
-	udpSocketGet  = new QUdpSocket();
-	QHostAddress *host  = new QHostAddress("192.168.1.212");
-	QHostAddress *bcast = new QHostAddress("192.168.1.255");
+Socket::Socket() {
+    udpSocketSend = new QUdpSocket();
+    udpSocketGet  = new QUdpSocket();
+// 	QHostAddress *host  = new QHostAddress("192.168.1.212");
+    QHostAddress *bcast = new QHostAddress("192.168.1.255");
 
-	udpSocketSend->connectToHost(*bcast, 10000);
-	udpSocketGet->bind(*host, 10000);
-	connect(udpSocketGet, SIGNAL(readyRead()), this, SLOT(readPendingDatagrams()));
+    udpSocketSend->connectToHost(*bcast, 10000);
+    udpSocketGet->bind(QHostAddress::Any, 10000);
+//     QObject::connect(udpSocketGet, &QIODevice::readyRead, this, &Socket::readPendingDatagrams);
 
-	QByteArray *datagram = makeNewDatagram(); // data from external function
-	udpSocketSend->write(*datagram);
-	qWarning() << "sent";
+    udpSocketSend->write(datagram[Discover]);
+    readPendingDatagrams();
 }
 
-QByteArray* Server::makeNewDatagram()
+void Socket::readPendingDatagrams()
 {
-	 QByteArray *datagram = new QByteArray;
-	 *datagram = QByteArray::fromHex("68 64 00 06 71 61"); // global discovery
-// 	 *datagram = QByteArray::fromHex("68 64 00 1e 63 6c ac cf 23 35 f5 8c 20 20 20 20 20 20 8c f5 35 23 cf ac 20 20 20 20 20 20"); // subscribe
-// 	 *datagram = QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 00"); // power off
-// 	 *datagram = QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 01"); // power on
-	 return datagram;
-}
+    while (udpSocketGet->waitForReadyRead(1000)) // 1s
+    {
+        while (udpSocketGet->hasPendingDatagrams())
+        {
+            QByteArray datagramGet;
+            datagramGet.resize(udpSocketGet->pendingDatagramSize());
+            QHostAddress sender;
+            quint16 senderPort;
 
-void Server::readPendingDatagrams()
-{
-    qWarning() << "read0";
-    while (udpSocketGet->hasPendingDatagrams()) {
-        QByteArray datagram;
-        datagram.resize(udpSocketGet->pendingDatagramSize());
-        QHostAddress sender;
-        quint16 senderPort;
+            udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
 
-        udpSocketGet->readDatagram(datagram.data(), datagram.size(), &sender, &senderPort);
-
-	qWarning() << "read";
-	qWarning() << QString(datagram);
-//         processTheDatagram(datagram);
-	received = true;
+            if (datagramGet != datagram[Discover])
+            {
+                socketIPAddress = sender;
+            }
+        }
     }
+
 }
 
 int main(int argc, char *argv[])
 {
-	QCoreApplication s20(argc, argv);
-	Server server;
-	while (!server.received)
-	{
-		true;
-	}
-	return 0;
+    QCoreApplication s20(argc, argv);
+    Socket socket;
+    return 0;
 }
-
-#include "s20.moc"
