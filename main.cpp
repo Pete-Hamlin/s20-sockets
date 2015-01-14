@@ -16,22 +16,17 @@
  *************************************************************************/
 
 #include <iostream>
-#include <set>
-
-#include <QByteArray>
-#include <QCoreApplication>
-#include <QUdpSocket>
+#include <vector>
 
 #include "socket.h"
 
+void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &sockets);
 void listSockets(std::vector<Socket> const &sockets);
 
 QByteArray discover = QByteArray::fromHex("68 64 00 06 71 61");
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication s20(argc, argv);
-
     QUdpSocket *udpSocketSend = new QUdpSocket();
     QUdpSocket *udpSocketGet = new QUdpSocket();
 
@@ -39,7 +34,27 @@ int main(int argc, char *argv[])
     udpSocketGet->bind(QHostAddress::Any, 10000);
 
     udpSocketSend->write(discover);
+    udpSocketSend->disconnectFromHost();
+    delete udpSocketSend;
     std::vector<Socket> sockets;
+
+    readDiscoverDatagrams(udpSocketGet, sockets);
+    listSockets(sockets);
+
+    char command;
+    std::cin >> command;
+    switch(command)
+    {
+        case 'q':
+            break;
+        case 't':
+            sockets.begin()->toggle();
+    }
+    return 0;
+}
+
+void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &sockets)
+{
     while (udpSocketGet->waitForReadyRead(1000)) // 1s
     {
         while (udpSocketGet->hasPendingDatagrams())
@@ -51,7 +66,7 @@ int main(int argc, char *argv[])
 
             udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
 
-            if (datagramGet != discover)
+            if (datagramGet != discover && datagramGet.left(2) == QByteArray::fromHex("68 64"))
             {
                 bool duplicate = false;
                 for(std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
@@ -61,15 +76,12 @@ int main(int argc, char *argv[])
                 }
                 if(!duplicate)
                 {
-                    Socket socket(sender, datagramGet);
+                    const Socket socket(sender, datagramGet);
                     sockets.push_back(socket);
                 }
             }
         }
     }
-
-    listSockets(sockets);
-    return 0;
 }
 
 void listSockets(std::vector<Socket> const &sockets)

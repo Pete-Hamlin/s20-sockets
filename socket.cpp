@@ -17,9 +17,34 @@
 
 #include "socket.h"
 
+#include <algorithm>
+
 Socket::Socket(QHostAddress IPaddress, QByteArray reply)
 {
     ip = IPaddress;
     mac = reply.mid(7, 6);
+    rmac = mac;
+    std::reverse(rmac.begin(), rmac.end());
     powered = reply.right(1) == QByteArray::fromHex("01");
+    QByteArray twenties = QByteArray::fromHex("20 20 20 20 20 20");
+    QByteArray zeros = QByteArray::fromHex("00 00 00 00");
+
+    datagram[Subscribe] = QByteArray::fromHex("68 64 00 1e 63 6c") + mac + twenties + rmac + twenties;
+    datagram[PowerOn] = QByteArray::fromHex("68 64 00 17 64 63") + mac + twenties + zeros + QByteArray::fromHex("01");
+    datagram[PowerOff] = QByteArray::fromHex("68 64 00 17 64 63") + mac + twenties + zeros + QByteArray::fromHex("00");
+}
+
+bool Socket::toggle()
+{
+    sendDatagram(datagram[Subscribe]); // TODO: process replies
+    sendDatagram(datagram[powered ? PowerOff : PowerOn]);
+}
+
+void Socket::sendDatagram(QByteArray datagram)
+{
+    udpSocketSend = new QUdpSocket();
+    udpSocketSend->connectToHost(ip, 10000);
+    udpSocketSend->write(datagram);
+    udpSocketSend->disconnectFromHost();
+    delete udpSocketSend;
 }

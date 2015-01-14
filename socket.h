@@ -17,20 +17,23 @@
 
 #include <QByteArray>
 #include <QHostAddress>
+#include <QUdpSocket>
 
 class Socket
 {
 public:
     Socket(QHostAddress, QByteArray);
+    bool toggle();
 
     QHostAddress ip;
     QByteArray mac;
     bool powered;
     enum {Subscribe, PowerOff, PowerOn};
-    
+
 private:
+    void sendDatagram(QByteArray datagram);
+
     QByteArray datagram[3];
-//         QByteArray::fromHex("68 64 00 1e 63 6c ac cf 23 35 f5 8c 20 20 20 20 20 20 8c f5 35 23 cf ac 20 20 20 20 20 20"), // subscribe
-//         QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 00"), // power off
-//         QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 01") // power on
+    QByteArray rmac; // Reveresed mac
+    QUdpSocket *udpSocketSend;
 };
