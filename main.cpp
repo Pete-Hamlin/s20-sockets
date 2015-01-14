@@ -15,50 +15,31 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
-#include <QCoreApplication>
+#include <iostream>
+#include <set>
+
 #include <QByteArray>
-#include <QHostAddress>
+#include <QCoreApplication>
 #include <QUdpSocket>
 
-class Socket : public QObject
+#include "socket.h"
+
+void listSockets(std::vector<Socket> const &sockets);
+
+QByteArray discover = QByteArray::fromHex("68 64 00 06 71 61");
+
+int main(int argc, char *argv[])
 {
-public:
-    Socket();
+    QCoreApplication s20(argc, argv);
 
-private:
-    void readPendingDatagrams();
-    QByteArray* makeNewDatagram();
+    QUdpSocket *udpSocketSend = new QUdpSocket();
+    QUdpSocket *udpSocketGet = new QUdpSocket();
 
-    QUdpSocket *udpSocketSend;
-    QUdpSocket *udpSocketGet;
-    QHostAddress socketIPAddress;
-
-    enum {Discover, Subscribe, PowerOff, PowerOn};
-    QByteArray datagram[4] = {
-        QByteArray::fromHex("68 64 00 06 71 61"), // global discovery
-        QByteArray::fromHex("68 64 00 1e 63 6c ac cf 23 35 f5 8c 20 20 20 20 20 20 8c f5 35 23 cf ac 20 20 20 20 20 20"), // subscribe
-        QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 00"), // power off
-        QByteArray::fromHex("68 64 00 17 64 63 ac cf 23 35 f5 8c 20 20 20 20 20 20 00 00 00 00 01") // power on
-    };
-};
-
-
-Socket::Socket() {
-    udpSocketSend = new QUdpSocket();
-    udpSocketGet  = new QUdpSocket();
-// 	QHostAddress *host  = new QHostAddress("192.168.1.212");
-    QHostAddress *bcast = new QHostAddress("192.168.1.255");
-
-    udpSocketSend->connectToHost(*bcast, 10000);
+    udpSocketSend->connectToHost(QHostAddress::Broadcast, 10000);
     udpSocketGet->bind(QHostAddress::Any, 10000);
-//     QObject::connect(udpSocketGet, &QIODevice::readyRead, this, &Socket::readPendingDatagrams);
 
-    udpSocketSend->write(datagram[Discover]);
-    readPendingDatagrams();
-}
-
-void Socket::readPendingDatagrams()
-{
+    udpSocketSend->write(discover);
+    std::vector<Socket> sockets;
     while (udpSocketGet->waitForReadyRead(1000)) // 1s
     {
         while (udpSocketGet->hasPendingDatagrams())
@@ -70,18 +51,31 @@ void Socket::readPendingDatagrams()
 
             udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
 
-            if (datagramGet != datagram[Discover])
+            if (datagramGet != discover)
             {
-                socketIPAddress = sender;
+                bool duplicate = false;
+                for(std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
+                {
+                    if (i->ip == sender)
+                        duplicate = true;
+                }
+                if(!duplicate)
+                {
+                    Socket socket(sender, datagramGet);
+                    sockets.push_back(socket);
+                }
             }
         }
     }
 
+    listSockets(sockets);
+    return 0;
 }
 
-int main(int argc, char *argv[])
+void listSockets(std::vector<Socket> const &sockets)
 {
-    QCoreApplication s20(argc, argv);
-    Socket socket;
-    return 0;
+    for (std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
+    {
+        std::cout << "IP Address: " << i->ip.toString().toStdString() << "\t MAC Address: " << i->mac.toHex().toStdString()  << "\t Powered: " << i->powered << std::endl;
+    }
 }
