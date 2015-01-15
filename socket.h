@@ -28,11 +28,11 @@ public:
     QHostAddress ip;
     QByteArray mac;
     bool powered;
-    enum {Subscribe, PowerOff, PowerOn};
 
 private:
     void sendDatagram(QByteArray datagram);
 
+    enum {Subscribe, PowerOff, PowerOn};
     QByteArray datagram[3];
     QByteArray rmac; // Reveresed mac
     QUdpSocket *udpSocketSend;

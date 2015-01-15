@@ -18,12 +18,10 @@
 #include <iostream>
 #include <vector>
 
-#include "socket.h"
+#include "discover.h"
 
 void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &sockets);
 void listSockets(std::vector<Socket> const &sockets);
-
-QByteArray discover = QByteArray::fromHex("68 64 00 06 71 61");
 
 int main(int argc, char *argv[])
 {
@@ -42,46 +40,24 @@ int main(int argc, char *argv[])
     listSockets(sockets);
 
     char command;
-    std::cin >> command;
-    switch(command)
+    unsigned int number = 1;
+    bool cont=true;
+    while(cont)
     {
-        case 'q':
-            break;
-        case 't':
-            sockets.begin()->toggle();
-    }
-    return 0;
-}
-
-void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &sockets)
-{
-    while (udpSocketGet->waitForReadyRead(1000)) // 1s
-    {
-        while (udpSocketGet->hasPendingDatagrams())
+        std::cout << "s - pick another socket (default is 1)\nt - toggle power state\nq - quit" << std::endl;
+        std::cin >> command;
+        switch(command)
         {
-            QByteArray datagramGet;
-            datagramGet.resize(udpSocketGet->pendingDatagramSize());
-            QHostAddress sender;
-            quint16 senderPort;
-
-            udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
-
-            if (datagramGet != discover && datagramGet.left(2) == QByteArray::fromHex("68 64"))
-            {
-                bool duplicate = false;
-                for(std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
-                {
-                    if (i->ip == sender)
-                        duplicate = true;
-                }
-                if(!duplicate)
-                {
-                    const Socket socket(sender, datagramGet);
-                    sockets.push_back(socket);
-                }
-            }
+            case 'q':
+                cont = false;
+                break;
+            case 's':
+                std::cin >> number;
+            case 't':
+               sockets[number-1].toggle();
         }
     }
+    return 0;
 }
 
 void listSockets(std::vector<Socket> const &sockets)

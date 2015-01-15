@@ -18,6 +18,7 @@
 #include "socket.h"
 
 #include <algorithm>
+#include <QThread>
 
 Socket::Socket(QHostAddress IPaddress, QByteArray reply)
 {
@@ -37,7 +38,9 @@ Socket::Socket(QHostAddress IPaddress, QByteArray reply)
 bool Socket::toggle()
 {
     sendDatagram(datagram[Subscribe]); // TODO: process replies
+    QThread::msleep(100); // wait a little to make toggle reliable
     sendDatagram(datagram[powered ? PowerOff : PowerOn]);
+    powered = !powered;
 }
 
 void Socket::sendDatagram(QByteArray datagram)
