@@ -37,24 +37,26 @@ int main(int argc, char *argv[])
     std::vector<Socket> sockets;
 
     readDiscoverDatagrams(udpSocketGet, sockets);
+    delete udpSocketGet;
     listSockets(sockets);
 
     char command;
     unsigned int number = 1;
     bool cont=true;
-    while(cont)
+    while (cont)
     {
         std::cout << "s - pick another socket (default is 1)\nt - toggle power state\nq - quit" << std::endl;
         std::cin >> command;
-        switch(command)
+        switch (command)
         {
-            case 'q':
-                cont = false;
-                break;
-            case 's':
-                std::cin >> number;
-            case 't':
-               sockets[number-1].toggle();
+        case 'q':
+            cont = false;
+            break;
+        case 's':
+            std::cin >> number;
+        case 't':
+            sockets[number-1].toggle();
+            listSockets(sockets);
         }
     }
     return 0;
@@ -64,6 +66,6 @@ void listSockets(std::vector<Socket> const &sockets)
 {
     for (std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
     {
-        std::cout << "IP Address: " << i->ip.toString().toStdString() << "\t MAC Address: " << i->mac.toHex().toStdString()  << "\t Powered: " << i->powered << std::endl;
+        std::cout << "IP Address: " << i->ip.toString().toStdString() << "\t MAC Address: " << i->mac.toHex().toStdString()  << "\t Power: " << (i->powered ? "On" : "Off") << std::endl;
     }
 }

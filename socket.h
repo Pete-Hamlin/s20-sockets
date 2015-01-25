@@ -30,10 +30,20 @@ public:
     bool powered;
 
 private:
-    void sendDatagram(QByteArray datagram);
+    enum Datagram {Subscribe, PowerOff, PowerOn, TableData, MaxCommands};
 
-    enum {Subscribe, PowerOff, PowerOn};
-    QByteArray datagram[3];
+    void sendDatagram(Datagram);
+    void readDatagrams(QUdpSocket *udpSocketGet, Datagram d);
+
+    QByteArray commandID[MaxCommands];
+    QByteArray datagram[MaxCommands];
     QByteArray rmac; // Reveresed mac
-    QUdpSocket *udpSocketSend;
+
+    const QByteArray magicKey = QByteArray::fromHex("68 64"); // recognize datagrams from the socket
+    const QByteArray twenties = QByteArray::fromHex("20 20 20 20 20 20"); // mac address padding
+    const QByteArray zeros = QByteArray::fromHex("00 00 00 00");
+    const QByteArray zero =  QByteArray::fromHex("00");
+    const QByteArray one =  QByteArray::fromHex("01");
+
+    QUdpSocket *udpSocketSend, *udpSocketGet;
 };

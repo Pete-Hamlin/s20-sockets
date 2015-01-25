@@ -18,6 +18,7 @@
 #include "socket.h"
 
 #include <algorithm>
+#include <iostream>
 #include <QThread>
 
 Socket::Socket(QHostAddress IPaddress, QByteArray reply)
@@ -26,28 +27,68 @@ Socket::Socket(QHostAddress IPaddress, QByteArray reply)
     mac = reply.mid(7, 6);
     rmac = mac;
     std::reverse(rmac.begin(), rmac.end());
-    powered = reply.right(1) == QByteArray::fromHex("01");
-    QByteArray twenties = QByteArray::fromHex("20 20 20 20 20 20");
-    QByteArray zeros = QByteArray::fromHex("00 00 00 00");
 
-    datagram[Subscribe] = QByteArray::fromHex("68 64 00 1e 63 6c") + mac + twenties + rmac + twenties;
-    datagram[PowerOn] = QByteArray::fromHex("68 64 00 17 64 63") + mac + twenties + zeros + QByteArray::fromHex("01");
-    datagram[PowerOff] = QByteArray::fromHex("68 64 00 17 64 63") + mac + twenties + zeros + QByteArray::fromHex("00");
+    powered = reply.right(1) == one;
+
+    commandID[Subscribe] = QByteArray::fromHex("63 6c");
+    commandID[PowerOn] = QByteArray::fromHex("73 66");
+    commandID[PowerOff] = commandID[PowerOn];
+    commandID[TableData] = QByteArray::fromHex("72 74");
+
+    // 2 hex bytes are the total length of the message
+    datagram[Subscribe] = magicKey + QByteArray::fromHex("00 1e") + commandID[Subscribe] + mac + twenties + rmac + twenties;
+    datagram[PowerOn] = magicKey + QByteArray::fromHex("00 17 64 63") + mac + twenties + zeros + one;
+    datagram[PowerOff] = magicKey + QByteArray::fromHex("00 17 64 63") + mac + twenties + zeros + zero;
+    datagram[TableData] = magicKey + QByteArray::fromHex("00 1d") + commandID[TableData] + mac + twenties + zeros + one + zeros + zero;
 }
 
 bool Socket::toggle()
 {
-    sendDatagram(datagram[Subscribe]); // TODO: process replies
-    QThread::msleep(100); // wait a little to make toggle reliable
-    sendDatagram(datagram[powered ? PowerOff : PowerOn]);
-    powered = !powered;
+    bool powerOld = powered;
+    while (powerOld == powered)
+    {
+        sendDatagram(Subscribe);
+        sendDatagram(powerOld ? PowerOff : PowerOn);
+    }
 }
 
-void Socket::sendDatagram(QByteArray datagram)
+void Socket::sendDatagram(Datagram d)
 {
+    udpSocketGet = new QUdpSocket();
+    udpSocketGet->bind(QHostAddress::Any, 10000);
+
     udpSocketSend = new QUdpSocket();
     udpSocketSend->connectToHost(ip, 10000);
-    udpSocketSend->write(datagram);
-    udpSocketSend->disconnectFromHost();
+    udpSocketSend->write(datagram[d]);
     delete udpSocketSend;
+    readDatagrams(udpSocketGet, d);
+    delete udpSocketGet;
+}
+
+void Socket::readDatagrams(QUdpSocket *udpSocketGet, Datagram d)
+{
+    while (udpSocketGet->waitForReadyRead(300)) // 300ms
+    {
+        while (udpSocketGet->hasPendingDatagrams())
+        {
+            QByteArray datagramGet;
+            datagramGet.resize(udpSocketGet->pendingDatagramSize());
+            QHostAddress sender;
+            quint16 senderPort;
+
+            udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
+
+            if (datagramGet.left(2) == magicKey && datagramGet.mid(4,2) == commandID[d])
+            {
+                std::cout << datagramGet.toHex().toStdString() << std::endl;
+                switch (d)
+                {
+                    case Subscribe:
+                    case PowerOff:
+                    case PowerOn:
+                        powered = datagramGet.right(1) == one;
+                }
+            }
+        }
+    }
 }
