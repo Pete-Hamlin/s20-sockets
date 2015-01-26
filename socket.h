@@ -23,14 +23,16 @@ class Socket
 {
 public:
     Socket(QHostAddress, QByteArray);
-    bool toggle();
+    void toggle();
+    void tableData();
 
     QHostAddress ip;
     QByteArray mac;
     bool powered;
+    QString name, remotePassword;
 
 private:
-    enum Datagram {Subscribe, PowerOff, PowerOn, TableData, MaxCommands};
+    enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, MaxCommands};
 
     void sendDatagram(Datagram);
     void readDatagrams(QUdpSocket *udpSocketGet, Datagram d);

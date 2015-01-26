@@ -38,25 +38,32 @@ int main(int argc, char *argv[])
 
     readDiscoverDatagrams(udpSocketGet, sockets);
     delete udpSocketGet;
-    listSockets(sockets);
 
     char command;
-    unsigned int number = 1;
+    unsigned int number = 0;
     bool cont=true;
     while (cont)
     {
-        std::cout << "s - pick another socket (default is 1)\nt - toggle power state\nq - quit" << std::endl;
+        listSockets(sockets);
+        std::cout << "d - show table data\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
         std::cin >> command;
         switch (command)
         {
-        case 'q':
-            cont = false;
-            break;
-        case 's':
-            std::cin >> number;
-        case 't':
-            sockets[number-1].toggle();
-            listSockets(sockets);
+            case 'd':
+                sockets[number].tableData();
+                break;
+            case 'p':
+                sockets[number].toggle();
+                break;
+            case 'q':
+                cont = false;
+                break;
+            case 's':
+                std::cin >> number;
+                --number; // count from 0
+                break;
+            default:
+                std::cout << "Invalid command" << std::endl;
         }
     }
     return 0;

@@ -34,15 +34,21 @@ Socket::Socket(QHostAddress IPaddress, QByteArray reply)
     commandID[PowerOn] = QByteArray::fromHex("73 66");
     commandID[PowerOff] = commandID[PowerOn];
     commandID[TableData] = QByteArray::fromHex("72 74");
+    commandID[SocketData] = commandID[TableData];
+    commandID[TimingData] = commandID[TableData];
 
     // 2 hex bytes are the total length of the message
     datagram[Subscribe] = magicKey + QByteArray::fromHex("00 1e") + commandID[Subscribe] + mac + twenties + rmac + twenties;
     datagram[PowerOn] = magicKey + QByteArray::fromHex("00 17 64 63") + mac + twenties + zeros + one;
     datagram[PowerOff] = magicKey + QByteArray::fromHex("00 17 64 63") + mac + twenties + zeros + zero;
-    datagram[TableData] = magicKey + QByteArray::fromHex("00 1d") + commandID[TableData] + mac + twenties + zeros + one + zeros + zero;
+    datagram[TableData] = magicKey + QByteArray::fromHex("00 1d") + commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex("01 00 00") + zeros;
+    // FIXME: parse table versions and numbers
+    datagram[SocketData] = magicKey + QByteArray::fromHex("00 1d") + commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex("04 00 02") + zeros;
+    datagram[TimingData] = magicKey + QByteArray::fromHex("00 1d") + commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex("03 00 03") + zeros;
+    // table number 00 version number
 }
 
-bool Socket::toggle()
+void Socket::toggle()
 {
     bool powerOld = powered;
     while (powerOld == powered)
@@ -50,6 +56,15 @@ bool Socket::toggle()
         sendDatagram(Subscribe);
         sendDatagram(powerOld ? PowerOff : PowerOn);
     }
+}
+
+void Socket::tableData()
+{
+    sendDatagram(Subscribe);
+    sendDatagram(TableData);
+    sendDatagram(SocketData);
+    sendDatagram(TimingData);
+    std::cout << name.toStdString() << std::endl;
 }
 
 void Socket::sendDatagram(Datagram d)
@@ -80,13 +95,18 @@ void Socket::readDatagrams(QUdpSocket *udpSocketGet, Datagram d)
 
             if (datagramGet.left(2) == magicKey && datagramGet.mid(4,2) == commandID[d])
             {
-                std::cout << datagramGet.toHex().toStdString() << std::endl;
+                std::cout << datagramGet.toHex().toStdString() << " " << d << std::endl;
                 switch (d)
                 {
                     case Subscribe:
                     case PowerOff:
                     case PowerOn:
                         powered = datagramGet.right(1) == one;
+                        break;
+                    case SocketData:
+                        remotePassword = datagramGet.mid(58, 12);
+                        name = datagramGet.mid(70, 16);
+                        break;
                 }
             }
         }
