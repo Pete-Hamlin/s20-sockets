@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     QUdpSocket *udpSocketGet = new QUdpSocket();
 
     udpSocketSend->connectToHost(QHostAddress::Broadcast, 10000);
-    udpSocketGet->bind(QHostAddress::Any, 10000);
+    udpSocketGet->bind(QHostAddress::Any, 10000, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
 
     udpSocketSend->write(discover);
     udpSocketSend->disconnectFromHost();
@@ -45,12 +45,18 @@ int main(int argc, char *argv[])
     while (cont)
     {
         listSockets(sockets);
-        std::cout << "d - show table data\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
+        std::cout << "d - update table data\nn - change socket name\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
         std::cin >> command;
         switch (command)
         {
             case 'd':
                 sockets[number].tableData();
+                break;
+            case 'n':
+//                 std::cout << "Enter new name (max 16 characters)" << std::endl;
+//                 string name;
+//                 std::cin >> name;
+                sockets[number].changeSocketName();
                 break;
             case 'p':
                 sockets[number].toggle();
@@ -73,6 +79,9 @@ void listSockets(std::vector<Socket> const &sockets)
 {
     for (std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
     {
+        std::cout << "___________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << i->ip.toString().toStdString() << "\t MAC Address: " << i->mac.toHex().toStdString()  << "\t Power: " << (i->powered ? "On" : "Off") << std::endl;
+        std::cout << "Socket Name: " << i->name.toStdString() << "\t Remote Password: " << i->remotePassword.toStdString() << std::endl;
     }
+    std::cout << "___________________________________________________________________________\n" << std::endl;
 }

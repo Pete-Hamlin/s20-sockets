@@ -25,21 +25,25 @@ public:
     Socket(QHostAddress, QByteArray);
     void toggle();
     void tableData();
+    void changeSocketName(/*QString name*/);
+    bool parseReply(QByteArray);
 
-    QHostAddress ip;
+    QHostAddress ip, localIP;
     QByteArray mac;
     bool powered;
     QString name, remotePassword;
 
 private:
-    enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, MaxCommands};
+    enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
 
     void sendDatagram(Datagram);
-    void readDatagrams(QUdpSocket *udpSocketGet, Datagram d);
+    void readDatagrams(QUdpSocket *udpSocketGet);
+    QByteArray fromIP(unsigned char, unsigned char, unsigned char, unsigned char);
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];
     QByteArray rmac; // Reveresed mac
+    QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion;
 
     const QByteArray magicKey = QByteArray::fromHex("68 64"); // recognize datagrams from the socket
     const QByteArray twenties = QByteArray::fromHex("20 20 20 20 20 20"); // mac address padding

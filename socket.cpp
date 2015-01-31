@@ -21,94 +21,145 @@
 #include <iostream>
 #include <QThread>
 
-Socket::Socket(QHostAddress IPaddress, QByteArray reply)
+Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
 {
     ip = IPaddress;
-    mac = reply.mid(7, 6);
+    mac = reply.mid ( 7, 6 );
     rmac = mac;
-    std::reverse(rmac.begin(), rmac.end());
+    std::reverse ( rmac.begin(), rmac.end() );
 
-    powered = reply.right(1) == one;
+    powered = reply.right ( 1 ) == one;
+    // 68:64:00:06:71:61 initial detection ??
+    // 68:64:00:1e:63:6c:ac:cf:23:35:f5:8c:20:20:20:20:20:20:38:38:38:38:38:38:20:20:20:20:20:20 // to 42.121.111.208
 
-    commandID[Subscribe] = QByteArray::fromHex("63 6c");
-    commandID[PowerOn] = QByteArray::fromHex("73 66");
+    commandID[Subscribe] = QByteArray::fromHex ( "63 6c" );
+    commandID[PowerOn] = QByteArray::fromHex ( "73 66" );
     commandID[PowerOff] = commandID[PowerOn];
-    commandID[TableData] = QByteArray::fromHex("72 74");
+    commandID[TableData] = QByteArray::fromHex ( "72 74" );
     commandID[SocketData] = commandID[TableData];
     commandID[TimingData] = commandID[TableData];
+    commandID[WriteSocketData] = QByteArray::fromHex ( "74 6d" );
 
     // 2 hex bytes are the total length of the message
-    datagram[Subscribe] = magicKey + QByteArray::fromHex("00 1e") + commandID[Subscribe] + mac + twenties + rmac + twenties;
-    datagram[PowerOn] = magicKey + QByteArray::fromHex("00 17 64 63") + mac + twenties + zeros + one;
-    datagram[PowerOff] = magicKey + QByteArray::fromHex("00 17 64 63") + mac + twenties + zeros + zero;
-    datagram[TableData] = magicKey + QByteArray::fromHex("00 1d") + commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex("01 00 00") + zeros;
-    // FIXME: parse table versions and numbers
-    datagram[SocketData] = magicKey + QByteArray::fromHex("00 1d") + commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex("04 00 02") + zeros;
-    datagram[TimingData] = magicKey + QByteArray::fromHex("00 1d") + commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex("03 00 03") + zeros;
-    // table number 00 version number
+    datagram[Subscribe] = magicKey + QByteArray::fromHex ( "00 1e" ) + commandID[Subscribe] + mac + twenties + rmac + twenties;
+    datagram[PowerOn] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + one;
+    datagram[PowerOff] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + zero;
+    datagram[TableData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
+
+    tableData();
+
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01")/*table number and unknown*/ +  QByteArray::fromHex("8a:00") /* record length = 138 bytes*/ + QByteArray::fromHex (":01:00:43:25" ) + mac + twenties + rmac + twenties + QByteArray::fromHex ( "38:38:38:38:38:38:20:20:20:20:20:20" ) + QByteArray ( "Heater          " ) + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27") + fromIP(42,121,111,208) + QByteArray::fromHex("10:27") + "vicenter.orvibo.com" + "   " + twenties + twenties + twenties + fromIP(192,168,1,212) + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
 }
 
 void Socket::toggle()
 {
     bool powerOld = powered;
-    while (powerOld == powered)
+    while ( powerOld == powered )
     {
-        sendDatagram(Subscribe);
-        sendDatagram(powerOld ? PowerOff : PowerOn);
+        sendDatagram ( Subscribe );
+        sendDatagram ( powerOld ? PowerOff : PowerOn );
     }
+}
+
+void Socket::changeSocketName ( /*QString name*/ )
+{
+    sendDatagram ( Subscribe );
+    std::cout << datagram[WriteSocketData].toHex().toStdString();
+    sendDatagram ( WriteSocketData );
 }
 
 void Socket::tableData()
 {
-    sendDatagram(Subscribe);
-    sendDatagram(TableData);
-    sendDatagram(SocketData);
-    sendDatagram(TimingData);
-    std::cout << name.toStdString() << std::endl;
+    sendDatagram ( Subscribe );
+    sendDatagram ( TableData );
+    datagram[SocketData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04 00 00" ) + zeros;
+    datagram[TimingData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex ( "03 00 00" ) + zeros;
+    // table number + 00 + version number
+    sendDatagram ( SocketData );
+    sendDatagram ( TimingData );
 }
 
-void Socket::sendDatagram(Datagram d)
+void Socket::sendDatagram ( Datagram d )
 {
     udpSocketGet = new QUdpSocket();
-    udpSocketGet->bind(QHostAddress::Any, 10000);
+    udpSocketGet->bind ( QHostAddress::Any, 10000, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
 
     udpSocketSend = new QUdpSocket();
-    udpSocketSend->connectToHost(ip, 10000);
-    udpSocketSend->write(datagram[d]);
+    udpSocketSend->connectToHost ( ip, 10000 );
+    udpSocketSend->write ( datagram[d] );
     delete udpSocketSend;
-    readDatagrams(udpSocketGet, d);
+    readDatagrams ( udpSocketGet);
     delete udpSocketGet;
 }
 
-void Socket::readDatagrams(QUdpSocket *udpSocketGet, Datagram d)
+// FIXME: try to always listen for incoming datagrams to make everything asyncronous
+void Socket::readDatagrams ( QUdpSocket *udpSocketGet)
 {
-    while (udpSocketGet->waitForReadyRead(300)) // 300ms
+    while ( udpSocketGet->waitForReadyRead ( 300 ) ) // 300ms
     {
-        while (udpSocketGet->hasPendingDatagrams())
+        while ( udpSocketGet->hasPendingDatagrams() )
         {
-            QByteArray datagramGet;
-            datagramGet.resize(udpSocketGet->pendingDatagramSize());
+            QByteArray reply;
+            reply.resize ( udpSocketGet->pendingDatagramSize() );
             QHostAddress sender;
             quint16 senderPort;
-
-            udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
-
-            if (datagramGet.left(2) == magicKey && datagramGet.mid(4,2) == commandID[d])
-            {
-                std::cout << datagramGet.toHex().toStdString() << " " << d << std::endl;
-                switch (d)
-                {
-                    case Subscribe:
-                    case PowerOff:
-                    case PowerOn:
-                        powered = datagramGet.right(1) == one;
-                        break;
-                    case SocketData:
-                        remotePassword = datagramGet.mid(58, 12);
-                        name = datagramGet.mid(70, 16);
-                        break;
-                }
-            }
+            udpSocketGet->readDatagram ( reply.data(), reply.size(), &sender, &senderPort );
+            parseReply ( reply );
         }
     }
+}
+
+bool Socket::parseReply ( QByteArray reply )
+{
+    if ( reply.left ( 2 ) != magicKey )
+        return false;
+
+    QByteArray id = reply.mid ( 4, 2 );
+    unsigned int datagram = std::distance ( commandID, std::find ( commandID, commandID + MaxCommands, id ) ); // match commandID with enum
+    if ( datagram == 3 ) // determine the table number
+    {
+        unsigned int table = reply[reply.indexOf ( zeros ) + 4]; // Table number immediately follows zeros
+        switch ( table )
+        {
+        case 1:
+            datagram = TableData;
+            break;
+        case 3:
+            datagram = TimingData;
+            break;
+        case 4:
+            datagram = SocketData;
+            break;
+        default:
+            return false;
+        }
+    }
+    std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
+    switch ( datagram )
+    {
+    case Subscribe:
+    case PowerOff:
+    case PowerOn:
+        powered = reply.right ( 1 ) == one;
+        break;
+    case TableData:
+//         FIXME: order might be swapped;
+        socketTableVersion = reply.mid ( reply.indexOf ( QByteArray::fromHex ( "000100000600" ) ) + 6, 2 );
+//      000100000600
+        break;
+    case SocketData:
+        remotePassword = reply.mid ( reply.indexOf ( rmac + twenties ) + 12, 12 );
+        name = reply.mid ( reply.indexOf ( rmac + twenties ) + 24, 16 );
+        break;
+    case TimingData:
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
+QByteArray Socket::fromIP(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
+{
+    return QByteArray::number(a) + QByteArray::number(b) + QByteArray::number(c) + QByteArray::number(d);
 }
