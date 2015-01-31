@@ -19,7 +19,7 @@
 
 QByteArray discover = QByteArray::fromHex("68 64 00 06 71 61");
 
-void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &sockets)
+void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> *sockets)
 {
     while (udpSocketGet->waitForReadyRead(500)) // 500ms
     {
@@ -35,7 +35,7 @@ void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &socket
             if (datagramGet != discover && datagramGet.left(2) == QByteArray::fromHex("68 64"))
             {
                 bool duplicate = false;
-                for(std::vector<Socket>::const_iterator i = sockets.begin() ; i != sockets.end(); ++i)
+                for(std::vector<Socket>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i)
                 {
                     if (i->ip == sender)
                         duplicate = true;
@@ -43,7 +43,7 @@ void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> &socket
                 if(!duplicate)
                 {
                     const Socket socket(sender, datagramGet);
-                    sockets.push_back(socket);
+                    sockets->push_back(socket);
                 }
             }
         }

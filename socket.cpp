@@ -19,7 +19,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <QThread>
 
 Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
 {
@@ -45,8 +44,6 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     datagram[PowerOn] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + one;
     datagram[PowerOff] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + zero;
     datagram[TableData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
-
-    tableData();
 
     datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01")/*table number and unknown*/ +  QByteArray::fromHex("8a:00") /* record length = 138 bytes*/ + QByteArray::fromHex (":01:00:43:25" ) + mac + twenties + rmac + twenties + QByteArray::fromHex ( "38:38:38:38:38:38:20:20:20:20:20:20" ) + QByteArray ( "Heater          " ) + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27") + fromIP(42,121,111,208) + QByteArray::fromHex("10:27") + "vicenter.orvibo.com" + "   " + twenties + twenties + twenties + fromIP(192,168,1,212) + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
 }

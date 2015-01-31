@@ -15,6 +15,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
+#ifndef SOCKET_H
+#define SOCKET_H
+
 #include <QByteArray>
 #include <QHostAddress>
 #include <QUdpSocket>
@@ -53,3 +56,5 @@ private:
 
     QUdpSocket *udpSocketSend, *udpSocketGet;
 };
+
+#endif  /* SOCKET_H */

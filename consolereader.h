@@ -15,36 +15,24 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
-#include <iostream>
-#include <vector>
+#ifndef CONSOLEREADER_H
+#define CONSOLEREADER_H
 
-#include "consolereader.h"
-#include "discover.h"
+#include <QCoreApplication>
+#include <QThread>
 
-void listSockets(std::vector<Socket> const &sockets);
+#include "socket.h"
 
-int main(int argc, char *argv[])
+class ConsoleReader : public QThread
 {
-    QCoreApplication app(argc, argv);
+public:
+    ConsoleReader(std::vector<Socket> *sockets_vector);
+    ~ConsoleReader();
+    void run ();
 
-    QUdpSocket *udpSocketSend = new QUdpSocket();
-    QUdpSocket *udpSocketGet = new QUdpSocket();
+private:
+    void listSockets();
+    std::vector<Socket> *sockets;
+};
 
-    udpSocketSend->connectToHost(QHostAddress::Broadcast, 10000);
-    udpSocketGet->bind(QHostAddress::Any, 10000, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
-
-    udpSocketSend->write(discover);
-    udpSocketSend->disconnectFromHost();
-    delete udpSocketSend;
-    std::vector<Socket> *sockets = new std::vector<Socket>;
-
-    readDiscoverDatagrams(udpSocketGet, sockets);
-    delete udpSocketGet;
-
-    ConsoleReader reader(sockets);
-    reader.start();
-
-    int exitCode = app.exec();
-    reader.wait();
-    return exitCode;
-}
+#endif  /* CONSOLEREADER_H */

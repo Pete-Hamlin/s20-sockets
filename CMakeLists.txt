@@ -4,5 +4,5 @@ project(s20)
 add_definitions(-std=gnu++11)
 
 find_package(Qt5 REQUIRED Core Network)
-add_executable(s20 main.cpp socket.cpp)
+add_executable(s20 main.cpp socket.cpp consolereader.cpp)
 target_link_libraries(s20 Qt5::Core Qt5::Network)
