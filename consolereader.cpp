@@ -19,14 +19,10 @@
 
 #include "consolereader.h"
 
-ConsoleReader::ConsoleReader(std::vector<Socket> *sockets_vector)
+ConsoleReader::ConsoleReader ( std::vector<Socket*> *sockets_vector )
 {
     sockets = sockets_vector;
-}
-
-ConsoleReader::~ConsoleReader()
-{
-    //
+    start();
 }
 
 void ConsoleReader::run()
@@ -35,46 +31,46 @@ void ConsoleReader::run()
     unsigned int number = 0;
     bool cont = true;
 
-    while (cont)
+    while ( cont )
     {
-        listSockets();
-        std::cout << "d - update table data\nn - change socket name\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
         std::cin >> command;
-        switch (command)
+        switch ( command )
         {
-            case 'd':
-                (*sockets)[number].tableData();
-                break;
-            case 'n':
+        case 'd':
+            ( *sockets ) [number]->tableData();
+            break;
+        case 'n':
 //                 std::cout << "Enter new name (max 16 characters)" << std::endl;
 //                 string name;
 //                 std::cin >> name;
-                (*sockets)[number].changeSocketName();
-                break;
-            case 'p':
-                (*sockets)[number].toggle();
-                break;
-            case 'q':
-                cont = false;
-                emit(QCoreApplication::quit());
-                break;
-            case 's':
-                std::cin >> number;
-                --number; // count from 0
-                break;
-            default:
-                std::cout << "Invalid command" << std::endl;
+            ( *sockets ) [number]->changeSocketName();
+            break;
+        case 'p':
+            ( *sockets ) [number]->toggle();
+            break;
+        case 'q':
+            cont = false;
+            emit ( QCoreApplication::quit() );
+            break;
+        case 's':
+            std::cin >> number;
+            --number; // count from 0
+            listSockets();
+            break;
+        default:
+            std::cout << "Invalid command: try again" << std::endl;
         }
     }
 }
 
 void ConsoleReader::listSockets()
 {
-    for (std::vector<Socket>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i)
+    for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
     {
         std::cout << "___________________________________________________________________________\n" << std::endl;
-        std::cout << "IP Address: " << i->ip.toString().toStdString() << "\t MAC Address: " << i->mac.toHex().toStdString()  << "\t Power: " << (i->powered ? "On" : "Off") << std::endl;
-        std::cout << "Socket Name: " << i->name.toStdString() << "\t Remote Password: " << i->remotePassword.toStdString() << std::endl;
+        std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
+        std::cout << "Socket Name: " << (*i)->name.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << std::endl;
     }
     std::cout << "___________________________________________________________________________\n" << std::endl;
+    std::cout << "d - update table data\nn - change socket name\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
 }

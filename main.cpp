@@ -19,32 +19,22 @@
 #include <vector>
 
 #include "consolereader.h"
-#include "discover.h"
-
-void listSockets(std::vector<Socket> const &sockets);
+#include "server.h"
 
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
 
-    QUdpSocket *udpSocketSend = new QUdpSocket();
-    QUdpSocket *udpSocketGet = new QUdpSocket();
+    std::vector<Socket*> *sockets = new std::vector<Socket*>;
+    Server server(sockets);
+    ConsoleReader *reader = new ConsoleReader(sockets);
+    QThread::sleep(2);
+    server.readPendingDatagrams();
 
-    udpSocketSend->connectToHost(QHostAddress::Broadcast, 10000);
-    udpSocketGet->bind(QHostAddress::Any, 10000, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
+    for ( unsigned i = 0; i < sockets->size(); ++i )
+    {
+        QObject::connect((*sockets)[i], &Socket::stateChanged, reader, &ConsoleReader::listSockets);
+    }
 
-    udpSocketSend->write(discover);
-    udpSocketSend->disconnectFromHost();
-    delete udpSocketSend;
-    std::vector<Socket> *sockets = new std::vector<Socket>;
-
-    readDiscoverDatagrams(udpSocketGet, sockets);
-    delete udpSocketGet;
-
-    ConsoleReader reader(sockets);
-    reader.start();
-
-    int exitCode = app.exec();
-    reader.wait();
-    return exitCode;
+    return app.exec();
 }

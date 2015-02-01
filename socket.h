@@ -20,16 +20,25 @@
 
 #include <QByteArray>
 #include <QHostAddress>
+#include <QTimer>
 #include <QUdpSocket>
 
-class Socket
+const QByteArray magicKey = QByteArray::fromHex ( "68 64" ); // recognize datagrams from the socket
+
+class Socket : public QObject
 {
+Q_OBJECT
+
+Q_SIGNALS:
+    void stateChanged();
+
 public:
-    Socket(QHostAddress, QByteArray);
+    Socket ( QHostAddress, QByteArray );
+    ~Socket();
     void toggle();
     void tableData();
-    void changeSocketName(/*QString name*/);
-    bool parseReply(QByteArray);
+    void changeSocketName ( /*QString name*/ );
+    bool parseReply ( QByteArray );
 
     QHostAddress ip, localIP;
     QByteArray mac;
@@ -39,22 +48,24 @@ public:
 private:
     enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
 
-    void sendDatagram(Datagram);
-    void readDatagrams(QUdpSocket *udpSocketGet);
-    QByteArray fromIP(unsigned char, unsigned char, unsigned char, unsigned char);
+    void sendDatagram ( Datagram );
+    QByteArray fromIP ( unsigned char, unsigned char, unsigned char, unsigned char );
+    void subscribe();
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];
     QByteArray rmac; // Reveresed mac
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion;
 
-    const QByteArray magicKey = QByteArray::fromHex("68 64"); // recognize datagrams from the socket
-    const QByteArray twenties = QByteArray::fromHex("20 20 20 20 20 20"); // mac address padding
-    const QByteArray zeros = QByteArray::fromHex("00 00 00 00");
-    const QByteArray zero =  QByteArray::fromHex("00");
-    const QByteArray one =  QByteArray::fromHex("01");
+    const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding
+    const QByteArray zeros = QByteArray::fromHex ( "00 00 00 00" );
+    const QByteArray zero =  QByteArray::fromHex ( "00" );
+    const QByteArray one =  QByteArray::fromHex ( "01" );
 
-    QUdpSocket *udpSocketSend, *udpSocketGet;
+    QUdpSocket *udpSocket;
+
+    QTimer *subscribeTimer;
+
 };
 
 #endif  /* SOCKET_H */

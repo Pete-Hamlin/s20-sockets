@@ -15,37 +15,24 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
+#ifndef SERVER_H
+#define SERVER_H
+
 #include "socket.h"
 
-QByteArray discover = QByteArray::fromHex("68 64 00 06 71 61");
-
-void readDiscoverDatagrams(QUdpSocket *udpSocketGet, std::vector<Socket> *sockets)
+class Server : public QObject
 {
-    while (udpSocketGet->waitForReadyRead(500)) // 500ms
-    {
-        while (udpSocketGet->hasPendingDatagrams())
-        {
-            QByteArray datagramGet;
-            datagramGet.resize(udpSocketGet->pendingDatagramSize());
-            QHostAddress sender;
-            quint16 senderPort;
+public:
+    Server ( std::vector<Socket*> *sockets_vector );
+    ~Server();
 
-            udpSocketGet->readDatagram(datagramGet.data(), datagramGet.size(), &sender, &senderPort);
+    void discoverSockets ();
+    void readPendingDatagrams();
 
-            if (datagramGet != discover && datagramGet.left(2) == QByteArray::fromHex("68 64"))
-            {
-                bool duplicate = false;
-                for(std::vector<Socket>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i)
-                {
-                    if (i->ip == sender)
-                        duplicate = true;
-                }
-                if(!duplicate)
-                {
-                    const Socket socket(sender, datagramGet);
-                    sockets->push_back(socket);
-                }
-            }
-        }
-    }
-}
+private:
+    QByteArray discover = QByteArray::fromHex ( "68 64 00 06 71 61" );
+    QUdpSocket *udpSocketGet;
+    std::vector<Socket*> *sockets;
+};
+
+#endif  /* SERVER_H */

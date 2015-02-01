@@ -45,7 +45,25 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     datagram[PowerOff] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + zero;
     datagram[TableData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01")/*table number and unknown*/ +  QByteArray::fromHex("8a:00") /* record length = 138 bytes*/ + QByteArray::fromHex (":01:00:43:25" ) + mac + twenties + rmac + twenties + QByteArray::fromHex ( "38:38:38:38:38:38:20:20:20:20:20:20" ) + QByteArray ( "Heater          " ) + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27") + fromIP(42,121,111,208) + QByteArray::fromHex("10:27") + "vicenter.orvibo.com" + "   " + twenties + twenties + twenties + fromIP(192,168,1,212) + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
+    tableData();
+
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( ":01:00:43:25" ) + mac + twenties + rmac + twenties + QByteArray::fromHex ( "38:38:38:38:38:38:20:20:20:20:20:20" ) + QByteArray ( "Heater          " ) + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27" ) + fromIP ( 42,121,111,208 ) + QByteArray::fromHex ( "10:27" ) + "vicenter.orvibo.com" + "   " + twenties + twenties + twenties + fromIP ( 192,168,1,212 ) + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
+
+    subscribeTimer = new QTimer(this);
+    subscribeTimer->setInterval(2*60*1000);
+    connect(subscribeTimer, &QTimer::timeout, this, &Socket::subscribe);
+    subscribeTimer->start();
+    subscribe();
+}
+
+Socket::~Socket()
+{
+    delete subscribeTimer;
+}
+
+void Socket::subscribe()
+{
+    sendDatagram ( Subscribe );
 }
 
 void Socket::toggle()
@@ -53,21 +71,17 @@ void Socket::toggle()
     bool powerOld = powered;
     while ( powerOld == powered )
     {
-        sendDatagram ( Subscribe );
         sendDatagram ( powerOld ? PowerOff : PowerOn );
     }
 }
 
 void Socket::changeSocketName ( /*QString name*/ )
 {
-    sendDatagram ( Subscribe );
-    std::cout << datagram[WriteSocketData].toHex().toStdString();
     sendDatagram ( WriteSocketData );
 }
 
 void Socket::tableData()
 {
-    sendDatagram ( Subscribe );
     sendDatagram ( TableData );
     datagram[SocketData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04 00 00" ) + zeros;
     datagram[TimingData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex ( "03 00 00" ) + zeros;
@@ -78,38 +92,18 @@ void Socket::tableData()
 
 void Socket::sendDatagram ( Datagram d )
 {
-    udpSocketGet = new QUdpSocket();
-    udpSocketGet->bind ( QHostAddress::Any, 10000, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
-
-    udpSocketSend = new QUdpSocket();
-    udpSocketSend->connectToHost ( ip, 10000 );
-    udpSocketSend->write ( datagram[d] );
-    delete udpSocketSend;
-    readDatagrams ( udpSocketGet);
-    delete udpSocketGet;
-}
-
-// FIXME: try to always listen for incoming datagrams to make everything asyncronous
-void Socket::readDatagrams ( QUdpSocket *udpSocketGet)
-{
-    while ( udpSocketGet->waitForReadyRead ( 300 ) ) // 300ms
-    {
-        while ( udpSocketGet->hasPendingDatagrams() )
-        {
-            QByteArray reply;
-            reply.resize ( udpSocketGet->pendingDatagramSize() );
-            QHostAddress sender;
-            quint16 senderPort;
-            udpSocketGet->readDatagram ( reply.data(), reply.size(), &sender, &senderPort );
-            parseReply ( reply );
-        }
-    }
+    udpSocket = new QUdpSocket();
+    udpSocket->connectToHost ( ip, 10000 );
+    udpSocket->write ( datagram[d] );
+    delete udpSocket;
 }
 
 bool Socket::parseReply ( QByteArray reply )
 {
     if ( reply.left ( 2 ) != magicKey )
+    {
         return false;
+    }
 
     QByteArray id = reply.mid ( 4, 2 );
     unsigned int datagram = std::distance ( commandID, std::find ( commandID, commandID + MaxCommands, id ) ); // match commandID with enum
@@ -131,14 +125,19 @@ bool Socket::parseReply ( QByteArray reply )
             return false;
         }
     }
-    std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
+//     std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
     switch ( datagram )
     {
     case Subscribe:
     case PowerOff:
     case PowerOn:
+    {
+        bool poweredOld = powered;
         powered = reply.right ( 1 ) == one;
+        if (powered != poweredOld)
+            Q_EMIT stateChanged();
         break;
+    }
     case TableData:
 //         FIXME: order might be swapped;
         socketTableVersion = reply.mid ( reply.indexOf ( QByteArray::fromHex ( "000100000600" ) ) + 6, 2 );
@@ -147,8 +146,12 @@ bool Socket::parseReply ( QByteArray reply )
     case SocketData:
         remotePassword = reply.mid ( reply.indexOf ( rmac + twenties ) + 12, 12 );
         name = reply.mid ( reply.indexOf ( rmac + twenties ) + 24, 16 );
+        Q_EMIT stateChanged();
         break;
     case TimingData:
+        break;
+    case WriteSocketData:
+        Q_EMIT stateChanged();
         break;
     default:
         return false;
@@ -156,7 +159,7 @@ bool Socket::parseReply ( QByteArray reply )
     return true;
 }
 
-QByteArray Socket::fromIP(unsigned char a, unsigned char b, unsigned char c, unsigned char d)
+QByteArray Socket::fromIP ( unsigned char a, unsigned char b, unsigned char c, unsigned char d )
 {
-    return QByteArray::number(a) + QByteArray::number(b) + QByteArray::number(c) + QByteArray::number(d);
+    return QByteArray::number ( a ) + QByteArray::number ( b ) + QByteArray::number ( c ) + QByteArray::number ( d );
 }
