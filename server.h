@@ -18,9 +18,13 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include <QThread>
+
 #include "socket.h"
 
-class Server : public QObject
+class QUdpSocket;
+
+class Server : public QThread
 {
 public:
     Server ( std::vector<Socket*> *sockets_vector );
@@ -28,6 +32,7 @@ public:
 
     void discoverSockets ();
     void readPendingDatagrams();
+    void run();
 
 private:
     QByteArray discover = QByteArray::fromHex ( "68 64 00 06 71 61" );

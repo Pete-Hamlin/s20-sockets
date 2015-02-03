@@ -15,7 +15,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
-#include <iostream>
 #include <vector>
 
 #include "consolereader.h"
@@ -28,13 +27,7 @@ int main(int argc, char *argv[])
     std::vector<Socket*> *sockets = new std::vector<Socket*>;
     Server server(sockets);
     ConsoleReader *reader = new ConsoleReader(sockets);
-    QThread::sleep(2);
-    server.readPendingDatagrams();
 
-    for ( unsigned i = 0; i < sockets->size(); ++i )
-    {
-        QObject::connect((*sockets)[i], &Socket::stateChanged, reader, &ConsoleReader::listSockets);
-    }
-
+    qWarning() << "event loop";
     return app.exec();
 }

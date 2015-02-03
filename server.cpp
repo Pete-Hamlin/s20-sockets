@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
-#include <algorithm>
+#include <QUdpSocket>
 
 #include "consolereader.h"
 #include "server.h"
@@ -33,7 +33,9 @@ Server::Server ( std::vector<Socket*> *sockets_vector )
     udpSocketSend->disconnectFromHost();
     delete udpSocketSend;
 
-    connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams );
+    connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
+    qWarning() << "starting server";
+    start();
 }
 
 Server::~Server()
@@ -41,8 +43,14 @@ Server::~Server()
     delete udpSocketGet;
 }
 
+void Server::run()
+{
+    readPendingDatagrams();
+}
+
 void Server::readPendingDatagrams()
 {
+//     qWarning () << "reading datagam";
     while ( udpSocketGet->hasPendingDatagrams() )
     {
         QByteArray reply;
@@ -67,12 +75,14 @@ void Server::readPendingDatagrams()
                 }
                 if ( !duplicate )
                 {
+                    qWarning() << "Socket found";
                     Socket *socket = new Socket ( sender, reply );
                     sockets->push_back ( socket );
                 }
             }
             else
             {
+//                 qWarning() << "preparing to parse datagram";
                 QByteArray mac = reply.mid(6,6);
                 for ( std::vector<Socket*>::iterator i = sockets->begin() ; i != sockets->end(); ++i )
                 {

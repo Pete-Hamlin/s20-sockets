@@ -25,28 +25,40 @@ ConsoleReader::ConsoleReader ( std::vector<Socket*> *sockets_vector )
     start();
 }
 
+ConsoleReader::~ConsoleReader()
+{
+    delete discoveryTimer;
+}
+
 void ConsoleReader::run()
 {
-    char command;
+    QThread::sleep(1); // wait until sockets are discovered
+    for ( unsigned i = 0; i < sockets->size(); ++i )
+    {
+        connect((*sockets)[i], &Socket::stateChanged, this, &ConsoleReader::listSockets);
+    }
+    listSockets();
+
+    std::string command;
     unsigned int number = 0;
     bool cont = true;
 
     while ( cont )
     {
         std::cin >> command;
-        switch ( command )
+        switch ( command[0] )
         {
         case 'd':
-            ( *sockets ) [number]->tableData();
+            (*sockets) [number]->tableData();
             break;
         case 'n':
-//                 std::cout << "Enter new name (max 16 characters)" << std::endl;
-//                 string name;
-//                 std::cin >> name;
-            ( *sockets ) [number]->changeSocketName();
+        {
+            command.erase(0,1);
+            (*sockets) [number]->changeSocketName(QString::fromStdString(command));
             break;
+        }
         case 'p':
-            ( *sockets ) [number]->toggle();
+            (*sockets) [number]->toggle();
             break;
         case 'q':
             cont = false;
@@ -72,5 +84,5 @@ void ConsoleReader::listSockets()
         std::cout << "Socket Name: " << (*i)->name.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << std::endl;
     }
     std::cout << "___________________________________________________________________________\n" << std::endl;
-    std::cout << "d - update table data\nn - change socket name\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
+    std::cout << "d - update table data\nnName - change socket name to Name (max 16 characters)\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
 }
