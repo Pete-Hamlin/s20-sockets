@@ -51,7 +51,6 @@ void Server::run()
 
 void Server::readPendingDatagrams()
 {
-//     qWarning () << "reading datagam";
     while ( udpSocketGet->hasPendingDatagrams() )
     {
         QByteArray reply;
@@ -65,7 +64,6 @@ void Server::readPendingDatagrams()
         {
             if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) ) // Reply to discover packet
             {
-                qWarning() << "Discover";
                 bool duplicate = false;
                 for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
                 {
@@ -77,14 +75,12 @@ void Server::readPendingDatagrams()
                 }
                 if ( !duplicate )
                 {
-                    qWarning() << "Socket found";
                     Socket *socket = new Socket ( sender, reply );
                     sockets->push_back ( socket );
                 }
             }
             else
             {
-//                 qWarning() << "preparing to parse datagram";
                 QByteArray mac = reply.mid(6,6);
                 for ( std::vector<Socket*>::iterator i = sockets->begin() ; i != sockets->end(); ++i )
                 {

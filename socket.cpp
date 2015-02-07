@@ -77,7 +77,6 @@ void Socket::run()
 {
     while ( commands.size() > 0 )
     {
-        qWarning() << "sending datagram" << commands.head() << " subscribed = " << subscribed;
         udpSocket->write ( datagram[commands.head()] );
         QThread::msleep(100);
     }
@@ -97,7 +96,7 @@ void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27" ) + fromIP ( 42,121,111,208 ) + QByteArray::fromHex ( "10:27" ) + "vicenter.orvibo.com" + "   " + twenties + twenties + twenties + fromIP ( 192,168,1,212 ) + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27" ) + fromIP ( 42,121,111,208 ) + QByteArray::fromHex ( "10:27" ) + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + ip.toString().toLatin1() + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
     sendDatagram ( WriteSocketData );
 }
 
@@ -113,7 +112,6 @@ void Socket::tableData()
 
 bool Socket::parseReply ( QByteArray reply )
 {
-    qWarning() << "parsing datagram";
     if ( reply.left ( 2 ) != magicKey )
     {
         return false;
@@ -128,15 +126,12 @@ bool Socket::parseReply ( QByteArray reply )
         {
         case 1:
             datagram = TableData;
-            qWarning() << "got Table";
             break;
         case 3:
             datagram = TimingData;
-            qWarning() << "got Timing";
             break;
         case 4:
             datagram = SocketData;
-            qWarning() << "got Socket";
             break;
         default:
             return false;
@@ -148,7 +143,6 @@ bool Socket::parseReply ( QByteArray reply )
     case Subscribe:
         subscribed = true;
         subscribeTimer->setInterval(2*60*1000); // 2min
-        qWarning() << "got Subscribe";
     case PowerOff:
     case PowerOn:
     {
@@ -163,20 +157,17 @@ bool Socket::parseReply ( QByteArray reply )
         break;
     }
     case TableData:
-//         qWarning() << "got TableData";
 //         FIXME: order might be swapped;
         socketTableVersion = reply.mid ( reply.indexOf ( QByteArray::fromHex ( "000100000600" ) ) + 6, 2 );
 //      000100000600
         break;
     case SocketData:
-//         qWarning() << "got SocketData";
         remotePassword = reply.mid ( reply.indexOf ( rmac + twenties ) + 12, 12 );
         name = reply.mid ( reply.indexOf ( rmac + twenties ) + 24, 16 );
         versionID = reply.mid ( reply.indexOf ( rmac + twenties ) - 14, 2 );
         Q_EMIT stateChanged();
         break;
     case TimingData:
-//         qWarning() << "got TimingData";
         break;
     case WriteSocketData:
         sendDatagram ( SocketData );

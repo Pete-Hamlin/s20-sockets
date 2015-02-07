@@ -64,7 +64,7 @@ private:
     QByteArray versionID;
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
-    const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding
+    const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding, 6 spaces
     const QByteArray zeros = QByteArray::fromHex ( "00 00 00 00" );
     const QByteArray zero =  QByteArray::fromHex ( "00" );
     const QByteArray one =  QByteArray::fromHex ( "01" );
