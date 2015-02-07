@@ -50,12 +50,15 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     udpSocket = new QUdpSocket();
     udpSocket->connectToHost ( ip, 10000 );
 
+    connect (this, &Socket::datagramQueued, this, &Socket::listen);
     subscribed = false;
     subscribeTimer = new QTimer(this);
-    subscribeTimer->setInterval(200); // increase later, debug
+    subscribeTimer->setInterval(2*60*1000); // increase later, debug
     subscribeTimer->setSingleShot(false);
     connect(subscribeTimer, &QTimer::timeout, this, &Socket::subscribe);
     subscribeTimer->start();
+    subscribe();
+    tableData();
 }
 
 Socket::~Socket()
@@ -64,9 +67,24 @@ Socket::~Socket()
     delete udpSocket;
 }
 
+void Socket::sendDatagram ( Datagram d )
+{
+    commands.enqueue(d);
+    Q_EMIT datagramQueued();
+}
+
+void Socket::run()
+{
+    while ( commands.size() > 0 )
+    {
+        qWarning() << "sending datagram" << commands.head() << " subscribed = " << subscribed;
+        udpSocket->write ( datagram[commands.head()] );
+        QThread::msleep(100);
+    }
+}
+
 void Socket::subscribe()
 {
-    qWarning() << "subscribing";
     sendDatagram ( Subscribe );
 }
 
@@ -91,12 +109,6 @@ void Socket::tableData()
     // table number + 00 + version number
     sendDatagram ( SocketData );
     sendDatagram ( TimingData );
-}
-
-void Socket::sendDatagram ( Datagram d )
-{
-    qWarning() << "sending datagram" << d << " subscribed = " << subscribed;
-    udpSocket->write ( datagram[d] );
 }
 
 bool Socket::parseReply ( QByteArray reply )
@@ -144,6 +156,10 @@ bool Socket::parseReply ( QByteArray reply )
         powered = reply.right ( 1 ) == one;
         if (powered != poweredOld)
             Q_EMIT stateChanged();
+        if ( datagram == PowerOff && powered == true )
+        {
+            datagram = PowerOn;
+        }
         break;
     }
     case TableData:
@@ -169,6 +185,15 @@ bool Socket::parseReply ( QByteArray reply )
     default:
         return false;
     }
+
+    if (commands.size() > 0)
+    {
+        if ( datagram == commands.head() )
+        {
+            commands.dequeue();
+        }
+    }
+
     return true;
 }
 

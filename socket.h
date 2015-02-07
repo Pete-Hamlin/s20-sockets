@@ -20,18 +20,21 @@
 
 #include <QByteArray>
 #include <QHostAddress>
+#include <QQueue>
 #include <QTimer>
+#include <QThread>
 
 class QUdpSocket;
 
 const QByteArray magicKey = QByteArray::fromHex ( "68 64" ); // recognize datagrams from the socket
 
-class Socket : public QObject
+class Socket : public QThread
 {
 Q_OBJECT
 
 Q_SIGNALS:
     void stateChanged();
+    void datagramQueued();
 
 public:
     Socket ( QHostAddress, QByteArray );
@@ -52,12 +55,14 @@ private:
     void sendDatagram ( Datagram );
     QByteArray fromIP ( unsigned char, unsigned char, unsigned char, unsigned char );
     void subscribe();
+    void listen() { start(); }
+    void run();
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];
     QByteArray rmac; // Reveresed mac
     QByteArray versionID;
-    QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion;
+    QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
     const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding
     const QByteArray zeros = QByteArray::fromHex ( "00 00 00 00" );
@@ -67,6 +72,7 @@ private:
     QUdpSocket *udpSocket;
     QTimer *subscribeTimer;
     bool subscribed;
+    QQueue<Datagram> commands;
 
 };
 

@@ -29,12 +29,13 @@ Server::Server ( std::vector<Socket*> *sockets_vector )
     udpSocketSend->connectToHost ( QHostAddress::Broadcast, 10000 );
     udpSocketGet->bind ( QHostAddress::Any, 10000);
 
+    connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
+
+    udpSocketSend->write ( discover );
     udpSocketSend->write ( discover );
     udpSocketSend->disconnectFromHost();
     delete udpSocketSend;
 
-    connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
-    qWarning() << "starting server";
     start();
 }
 
@@ -64,6 +65,7 @@ void Server::readPendingDatagrams()
         {
             if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) ) // Reply to discover packet
             {
+                qWarning() << "Discover";
                 bool duplicate = false;
                 for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
                 {

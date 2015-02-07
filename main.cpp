@@ -28,6 +28,5 @@ int main(int argc, char *argv[])
     Server server(sockets);
     ConsoleReader *reader = new ConsoleReader(sockets);
 
-    qWarning() << "event loop";
     return app.exec();
 }
