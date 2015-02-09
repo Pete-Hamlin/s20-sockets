@@ -62,12 +62,18 @@ private:
     QByteArray datagram[MaxCommands];
     QByteArray rmac; // Reveresed mac
     QByteArray versionID;
+    QByteArray icon; // displayed icon
+    QByteArray hardwareVersion;
+    QByteArray firmwareVersion;
+    QByteArray wifiFirmwareVersion; // CC3000 firmware version
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
+    QByteArray port = QByteArray::fromHex ( "10:27" ); // 10000 in hex (little endian)
+    QByteArray localGatewayIP;
 
     const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding, 6 spaces
     const QByteArray zeros = QByteArray::fromHex ( "00 00 00 00" );
-    const QByteArray zero =  QByteArray::fromHex ( "00" );
-    const QByteArray one =  QByteArray::fromHex ( "01" );
+    const QByteArray zero = QByteArray::fromHex ( "00" );
+    const QByteArray one = QByteArray::fromHex ( "01" );
 
     QUdpSocket *udpSocket;
     QTimer *subscribeTimer;

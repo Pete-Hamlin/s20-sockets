@@ -53,7 +53,7 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     connect (this, &Socket::datagramQueued, this, &Socket::listen);
     subscribed = false;
     subscribeTimer = new QTimer(this);
-    subscribeTimer->setInterval(2*60*1000); // increase later, debug
+    subscribeTimer->setInterval(2*60*1000); // 2 min
     subscribeTimer->setSingleShot(false);
     connect(subscribeTimer, &QTimer::timeout, this, &Socket::subscribe);
     subscribeTimer->start();
@@ -96,7 +96,7 @@ void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + QByteArray::fromHex ( "04:00:20:00:00:00:14:00:00:00:05:00:00:00:10:27" ) + fromIP ( 42,121,111,208 ) + QByteArray::fromHex ( "10:27" ) + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + ip.toString().toLatin1() + QByteArray::fromHex ( "c0:a8:01:01:ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + fromIP ( 42,121,111,208 ) + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + ip.toString().toLatin1() + localGatewayIP + QByteArray::fromHex ( "ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
     sendDatagram ( WriteSocketData );
 }
 
@@ -137,7 +137,7 @@ bool Socket::parseReply ( QByteArray reply )
             return false;
         }
     }
-//     std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
+    std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
     switch ( datagram )
     {
     case Subscribe:
@@ -162,11 +162,26 @@ bool Socket::parseReply ( QByteArray reply )
 //      000100000600
         break;
     case SocketData:
-        remotePassword = reply.mid ( reply.indexOf ( rmac + twenties ) + 12, 12 );
-        name = reply.mid ( reply.indexOf ( rmac + twenties ) + 24, 16 );
-        versionID = reply.mid ( reply.indexOf ( rmac + twenties ) - 14, 2 );
+    {
+        unsigned short int index = reply.indexOf ( rmac + twenties );
+        versionID = reply.mid ( index - 14, 2 );
+        index += 12; // length of rmac + padding
+        remotePassword = reply.mid ( index, 12 ); // max 12 symbols
+        index += 12;
+        name = reply.mid ( index, 16 ); // max 16 symbols
+        index += 16;
+        icon = reply.mid ( index, 2 );
+        index += 2;
+        hardwareVersion = reply.mid ( index, 4 );
+        index += 4;
+        firmwareVersion = reply.mid ( index, 4 );
+        index += 4;
+        wifiFirmwareVersion = reply.mid (index, 4);
+        index += 56;
+        localGatewayIP = reply.mid (index, 4);
         Q_EMIT stateChanged();
         break;
+    }
     case TimingData:
         break;
     case WriteSocketData:
@@ -190,5 +205,6 @@ bool Socket::parseReply ( QByteArray reply )
 
 QByteArray Socket::fromIP ( unsigned char a, unsigned char b, unsigned char c, unsigned char d )
 {
-    return QByteArray::number ( a ) + QByteArray::number ( b ) + QByteArray::number ( c ) + QByteArray::number ( d );
+    qWarning() << QByteArray::number ( a, 16 ) + QByteArray::number ( b, 16 ) + QByteArray::number ( c, 16 ) + QByteArray::number ( d, 16 );
+    return QByteArray::number ( a, 16 ) + QByteArray::number ( b, 16 ) + QByteArray::number ( c, 16 ) + QByteArray::number ( d, 16 );
 }

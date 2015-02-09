@@ -53,8 +53,10 @@ void ConsoleReader::run()
             break;
         case 'n':
         {
-            command.erase(0,1);
-            (*sockets) [number]->changeSocketName(QString::fromStdString(command));
+            std::string name;
+            std::cout << "Please enter a new name: ";
+            std::cin >> name;
+            (*sockets) [number]->changeSocketName(QString::fromStdString(name));
             break;
         }
         case 'p':
@@ -84,5 +86,6 @@ void ConsoleReader::listSockets()
         std::cout << "Socket Name: " << (*i)->name.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << std::endl;
     }
     std::cout << "___________________________________________________________________________\n" << std::endl;
-    std::cout << "d - update table data\nnName - change socket name to Name (max 16 characters)\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
+    std::cout << "d - update table data\nn - change socket name (max 16 characters)\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
+    std::cout << "Enter command: " << std::flush;
 }
