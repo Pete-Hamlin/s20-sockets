@@ -69,6 +69,12 @@ private:
     QByteArray port = QByteArray::fromHex ( "10:27" ); // 10000 in hex (little endian)
     QByteArray localIP; // same as QHostAddress ip but in QByteArray, maybe fix later...
     QByteArray localGatewayIP;
+    QByteArray localNetMask;
+    QByteArray dhcpNode;
+    QByteArray discoverable;
+    QByteArray timeZoneSet;
+    QByteArray timeZone;
+    QByteArray countdown;
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
     const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding, 6 spaces

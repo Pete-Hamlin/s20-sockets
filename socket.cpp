@@ -31,7 +31,6 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
 
     powered = reply.right ( 1 ) == one;
     // 68:64:00:06:71:61 initial detection ??
-    // 68:64:00:1e:63:6c:ac:cf:23:35:f5:8c:20:20:20:20:20:20:38:38:38:38:38:38:20:20:20:20:20:20 // to 42.121.111.208
 
     commandID[Subscribe] = QByteArray::fromHex ( "63 6c" );
     commandID[PowerOn] = QByteArray::fromHex ( "73 66" );
@@ -96,7 +95,11 @@ void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + QByteArray::fromHex ( "ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
+    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + QByteArray::fromHex ( "00:ff" ) + countdown;
+    
+    std::cout << record.length() << std::endl;
+
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + record;
     sendDatagram ( WriteSocketData );
 }
 
@@ -183,6 +186,18 @@ bool Socket::parseReply ( QByteArray reply )
         localIP = reply.mid ( index, 4 );
         index += 4;
         localGatewayIP = reply.mid ( index, 4 );
+        index += 4;
+        localNetMask = reply.mid ( index, 4 );
+        index += 4;
+        dhcpNode = reply.mid ( index, 1 );
+        ++index;
+        discoverable = reply.mid ( index, 1 );
+        ++index;
+        timeZoneSet = reply.mid ( index, 1 );
+        ++index;
+        timeZone = reply.mid ( index, 1 );
+        ++index;
+        countdown = reply.mid ( index, 2 );
         Q_EMIT stateChanged();
         break;
     }
@@ -190,7 +205,6 @@ bool Socket::parseReply ( QByteArray reply )
         break;
     case WriteSocketData:
         sendDatagram ( SocketData );
-//         Q_EMIT stateChanged();
         break;
     default:
         return false;
