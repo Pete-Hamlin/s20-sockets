@@ -96,7 +96,7 @@ void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + fromIP ( 42,121,111,208 ) + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + ip.toString().toLatin1() + localGatewayIP + QByteArray::fromHex ( "ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + QByteArray::fromHex ( "ff:ff:ff:00:01:01:00:08:00:ff:00:00" );
     sendDatagram ( WriteSocketData );
 }
 
@@ -176,9 +176,13 @@ bool Socket::parseReply ( QByteArray reply )
         index += 4;
         firmwareVersion = reply.mid ( index, 4 );
         index += 4;
-        wifiFirmwareVersion = reply.mid (index, 4);
-        index += 56;
-        localGatewayIP = reply.mid (index, 4);
+        wifiFirmwareVersion = reply.mid ( index, 4 );
+        index += 6;
+        staticServerIP = reply.mid ( index, 4 );  // 42.121.111.208 is used
+        index += 46;
+        localIP = reply.mid ( index, 4 );
+        index += 4;
+        localGatewayIP = reply.mid ( index, 4 );
         Q_EMIT stateChanged();
         break;
     }
@@ -201,10 +205,4 @@ bool Socket::parseReply ( QByteArray reply )
     }
 
     return true;
-}
-
-QByteArray Socket::fromIP ( unsigned char a, unsigned char b, unsigned char c, unsigned char d )
-{
-    qWarning() << QByteArray::number ( a, 16 ) + QByteArray::number ( b, 16 ) + QByteArray::number ( c, 16 ) + QByteArray::number ( d, 16 );
-    return QByteArray::number ( a, 16 ) + QByteArray::number ( b, 16 ) + QByteArray::number ( c, 16 ) + QByteArray::number ( d, 16 );
 }

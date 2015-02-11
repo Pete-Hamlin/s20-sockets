@@ -44,7 +44,7 @@ public:
     void changeSocketName ( QString newName );
     bool parseReply ( QByteArray );
 
-    QHostAddress ip, localIP;
+    QHostAddress ip;
     QByteArray mac;
     bool powered;
     QByteArray name, remotePassword;
@@ -53,7 +53,6 @@ private:
     enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
 
     void sendDatagram ( Datagram );
-    QByteArray fromIP ( unsigned char, unsigned char, unsigned char, unsigned char );
     void subscribe();
     void listen() { start(); }
     void run();
@@ -66,9 +65,11 @@ private:
     QByteArray hardwareVersion;
     QByteArray firmwareVersion;
     QByteArray wifiFirmwareVersion; // CC3000 firmware version
-    QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
+    QByteArray staticServerIP;
     QByteArray port = QByteArray::fromHex ( "10:27" ); // 10000 in hex (little endian)
+    QByteArray localIP; // same as QHostAddress ip but in QByteArray, maybe fix later...
     QByteArray localGatewayIP;
+    QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
     const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding, 6 spaces
     const QByteArray zeros = QByteArray::fromHex ( "00 00 00 00" );
