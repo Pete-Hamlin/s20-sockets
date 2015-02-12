@@ -97,9 +97,14 @@ void Socket::changeSocketName ( QString newName )
 
     QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + QByteArray::fromHex ( "00:ff" ) + countdown;
     
-    std::cout << record.length() << std::endl;
+    QByteArray recordLength;
+    QDataStream stream(&recordLength, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    quint16 length = record.length();
+    stream << length;
+    qWarning() << recordLength;
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ +  QByteArray::fromHex ( "8a:00" ) /* record length = 138 bytes*/ + record;
+    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
     sendDatagram ( WriteSocketData );
 }
 
@@ -122,13 +127,12 @@ bool Socket::parseReply ( QByteArray reply )
 
     QByteArray id = reply.mid ( 4, 2 );
     unsigned int datagram = std::distance ( commandID, std::find ( commandID, commandID + MaxCommands, id ) ); // match commandID with enum
-    if ( datagram == 3 ) // determine the table number
+    if ( datagram == TableData ) // determine the table number
     {
         unsigned int table = reply[reply.indexOf ( zeros ) + 4]; // Table number immediately follows zeros
         switch ( table )
         {
         case 1:
-            datagram = TableData;
             break;
         case 3:
             datagram = TimingData;
