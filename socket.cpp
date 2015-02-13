@@ -102,7 +102,6 @@ void Socket::changeSocketName ( QString newName )
     stream.setByteOrder(QDataStream::LittleEndian);
     quint16 length = record.length();
     stream << length;
-    qWarning() << recordLength;
 
     datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
     sendDatagram ( WriteSocketData );
@@ -144,7 +143,6 @@ bool Socket::parseReply ( QByteArray reply )
             return false;
         }
     }
-    std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
     switch ( datagram )
     {
     case Subscribe:
@@ -170,6 +168,7 @@ bool Socket::parseReply ( QByteArray reply )
         break;
     case SocketData:
     {
+        std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
         unsigned short int index = reply.indexOf ( rmac + twenties );
         versionID = reply.mid ( index - 14, 2 );
         index += 12; // length of rmac + padding
