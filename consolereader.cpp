@@ -25,11 +25,6 @@ ConsoleReader::ConsoleReader ( std::vector<Socket*> *sockets_vector )
     start();
 }
 
-ConsoleReader::~ConsoleReader()
-{
-    delete discoveryTimer;
-}
-
 void ConsoleReader::run()
 {
     QThread::sleep(1); // wait until sockets are discovered

@@ -174,7 +174,7 @@ bool Socket::parseReply ( QByteArray reply )
         powered = reply.right ( 1 ) == one;
         if (powered != poweredOld)
             Q_EMIT stateChanged();
-        if ( datagram == PowerOff && powered == true )
+        if ( datagram == PowerOff && powered == true ) // Required to deque
         {
             datagram = PowerOn;
         }

@@ -27,13 +27,11 @@ class ConsoleReader : public QThread
 {
 public:
     ConsoleReader ( std::vector<Socket*> *sockets_vector );
-    ~ConsoleReader();
     void run();
     void listSockets();
 
 private:
     std::vector<Socket*> *sockets;
-    QTimer *discoveryTimer;
 };
 
 #endif  /* CONSOLEREADER_H */
