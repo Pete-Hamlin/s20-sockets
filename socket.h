@@ -71,6 +71,7 @@ private:
     QByteArray wifiFirmwareVersion; // CC3000 firmware version
     QByteArray staticServerIP;
     QByteArray port = QByteArray::fromHex ( "10:27" ); // 10000 in hex (little endian)
+    QByteArray domainServerName;
     QByteArray localIP; // same as QHostAddress ip but in QByteArray, maybe fix later...
     QByteArray localGatewayIP;
     QByteArray localNetMask;

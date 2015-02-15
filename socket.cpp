@@ -122,7 +122,7 @@ void Socket::changeTimezone ( int8_t newTimezone )
 
 void Socket::writeSocketData(QByteArray name, QByteArray password, QByteArray timezone)
 {
-    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + password + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timezone + QByteArray::fromHex ( "00:ff" ) + countdown;
+    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + password + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timezone + QByteArray::fromHex ( "00:ff" ) + countdown;
 
     QByteArray recordLength;
     QDataStream stream(&recordLength, QIODevice::WriteOnly);
@@ -212,7 +212,9 @@ bool Socket::parseReply ( QByteArray reply )
         wifiFirmwareVersion = reply.mid ( index, 4 );
         index += 6;
         staticServerIP = reply.mid ( index, 4 );  // 42.121.111.208 is used
-        index += 46;
+        index += 6;
+        domainServerName = reply.mid ( index, 40);
+        index += 40;
         localIP = reply.mid ( index, 4 );
         index += 4;
         localGatewayIP = reply.mid ( index, 4 );

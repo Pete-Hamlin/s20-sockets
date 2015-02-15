@@ -99,5 +99,5 @@ void ConsoleReader::listSockets()
     std::cout << "_____________________________________________________________________________\n" << std::endl;
     std::cout << "d - update table data\nn - change socket name (max 16 characters)\np - toggle power state\nP - change remote password (max 12 characters)\n";
     std::cout << "q - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
-    std::cout << "Enter command: " << std::flush;
+    std::cout << "Enter command: " << std::endl;
 }
