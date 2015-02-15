@@ -41,10 +41,10 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     commandID[WriteSocketData] = QByteArray::fromHex ( "74 6d" );
 
     // 2 hex bytes are the total length of the message
-    datagram[Subscribe] = magicKey + QByteArray::fromHex ( "00 1e" ) + commandID[Subscribe] + mac + twenties + rmac + twenties;
-    datagram[PowerOn] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + one;
-    datagram[PowerOff] = magicKey + QByteArray::fromHex ( "00 17 64 63" ) + mac + twenties + zeros + zero;
-    datagram[TableData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
+    datagram[Subscribe] = commandID[Subscribe] + mac + twenties + rmac + twenties;
+    datagram[PowerOn] = QByteArray::fromHex ( "64 63" ) + mac + twenties + zeros + one;
+    datagram[PowerOff] = QByteArray::fromHex ( "64 63" ) + mac + twenties + zeros + zero;
+    datagram[TableData] = commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
 
     udpSocket = new QUdpSocket();
     udpSocket->connectToHost ( ip, 10000 );
@@ -76,7 +76,15 @@ void Socket::run()
 {
     while ( commands.size() > 0 )
     {
-        udpSocket->write ( datagram[commands.head()] );
+        QByteArray currentDatagram = datagram[commands.head()];
+        QByteArray recordLength;
+        QDataStream stream(&recordLength, QIODevice::WriteOnly);
+        stream.setByteOrder(QDataStream::BigEndian);
+        uint16_t length = currentDatagram.length() + 4; // +4 for magicKey and total message length
+        stream << length;
+        currentDatagram = magicKey + recordLength + currentDatagram;
+
+        udpSocket->write ( currentDatagram );
         QThread::msleep(100);
     }
 }
@@ -115,22 +123,22 @@ void Socket::changeTimezone ( int8_t newTimezone )
 void Socket::writeSocketData(QByteArray name, QByteArray password, QByteArray timezone)
 {
     QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + password + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timezone + QByteArray::fromHex ( "00:ff" ) + countdown;
-    
+
     QByteArray recordLength;
     QDataStream stream(&recordLength, QIODevice::WriteOnly);
     stream.setByteOrder(QDataStream::LittleEndian);
     uint16_t length = record.length();
     stream << length;
 
-    datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
+    datagram[WriteSocketData] = commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
     sendDatagram ( WriteSocketData );
 }
 
 void Socket::tableData()
 {
     sendDatagram ( TableData );
-    datagram[SocketData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04 00 00" ) + zeros;
-    datagram[TimingData] = magicKey + QByteArray::fromHex ( "00 1d" ) + commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex ( "03 00 00" ) + zeros;
+    datagram[SocketData] = commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04 00 00" ) + zeros;
+    datagram[TimingData] = commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex ( "03 00 00" ) + zeros;
     // table number + 00 + version number
     sendDatagram ( SocketData );
     sendDatagram ( TimingData );
