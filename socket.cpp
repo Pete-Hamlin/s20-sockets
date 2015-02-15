@@ -94,13 +94,32 @@ void Socket::toggle()
 void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
+    writeSocketData(name, remotePassword, timeZone);
+}
 
-    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + QByteArray::fromHex ( "00:ff" ) + countdown;
+void Socket::changeSocketPassword ( QString newPassword )
+{
+    QByteArray password = newPassword.toLatin1().leftJustified(12, ' ', true);
+    writeSocketData(socketName, password, timeZone);
+}
+
+void Socket::changeTimezone ( int8_t newTimezone )
+{
+    QByteArray timezone;
+    QDataStream stream(&timezone, QIODevice::WriteOnly);
+    stream.setByteOrder(QDataStream::BigEndian);
+    stream << newTimezone;
+    writeSocketData(socketName, remotePassword, timezone);
+}
+
+void Socket::writeSocketData(QByteArray name, QByteArray password, QByteArray timezone)
+{
+    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + password + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + QStringLiteral("vicenter.orvibo.com   ").toLatin1() + twenties + twenties + twenties + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timezone + QByteArray::fromHex ( "00:ff" ) + countdown;
     
     QByteArray recordLength;
     QDataStream stream(&recordLength, QIODevice::WriteOnly);
     stream.setByteOrder(QDataStream::LittleEndian);
-    quint16 length = record.length();
+    uint16_t length = record.length();
     stream << length;
 
     datagram[WriteSocketData] = magicKey + QByteArray::fromHex ( "00 a5" ) + commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
@@ -174,7 +193,7 @@ bool Socket::parseReply ( QByteArray reply )
         index += 12; // length of rmac + padding
         remotePassword = reply.mid ( index, 12 ); // max 12 symbols
         index += 12;
-        name = reply.mid ( index, 16 ); // max 16 symbols
+        socketName = reply.mid ( index, 16 ); // max 16 symbols
         index += 16;
         icon = reply.mid ( index, 2 );
         index += 2;

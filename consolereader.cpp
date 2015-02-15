@@ -62,6 +62,14 @@ void ConsoleReader::run()
         case 'p':
             (*sockets) [number]->toggle();
             break;
+        case 'P':
+        {
+            std::string password;
+            std::cout << "Please enter a new password: ";
+            std::cin >> password;
+            (*sockets) [number]->changeSocketPassword(QString::fromStdString(password));
+            break;
+        }
         case 'q':
             cont = false;
             emit ( QCoreApplication::quit() );
@@ -71,6 +79,14 @@ void ConsoleReader::run()
             --number; // count from 0
             listSockets();
             break;
+        case 't':
+        {
+            int timezone;
+            std::cout << "Please enter a new timezone (integer from -11 to 12): ";
+            std::cin >> timezone;
+            (*sockets) [number]->changeTimezone(timezone);
+            break;
+        }
         default:
             std::cout << "Invalid command: try again" << std::endl;
         }
@@ -81,11 +97,12 @@ void ConsoleReader::listSockets()
 {
     for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
     {
-        std::cout << "___________________________________________________________________________\n" << std::endl;
+        std::cout << "_____________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
-        std::cout << "Socket Name: " << (*i)->name.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << std::endl;
+        std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString() << std::endl;
     }
-    std::cout << "___________________________________________________________________________\n" << std::endl;
-    std::cout << "d - update table data\nn - change socket name (max 16 characters)\ns - pick another socket (default is 1)\np - toggle power state\nq - quit" << std::endl;
+    std::cout << "_____________________________________________________________________________\n" << std::endl;
+    std::cout << "d - update table data\nn - change socket name (max 16 characters)\np - toggle power state\nP - change remote password (max 12 characters)\n";
+    std::cout << "q - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
     std::cout << "Enter command: " << std::flush;
 }

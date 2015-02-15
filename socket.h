@@ -42,12 +42,15 @@ public:
     void toggle();
     void tableData();
     void changeSocketName ( QString newName );
+    void changeSocketPassword ( QString newPassword );
+    void changeTimezone ( int8_t newTimezone );
     bool parseReply ( QByteArray );
 
     QHostAddress ip;
     QByteArray mac;
     bool powered;
-    QByteArray name, remotePassword;
+    QByteArray socketName, remotePassword;
+    QByteArray timeZone;
 
 private:
     enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
@@ -56,6 +59,7 @@ private:
     void subscribe();
     void listen() { start(); }
     void run();
+    void writeSocketData (QByteArray name, QByteArray password, QByteArray timezone);
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];
@@ -73,7 +77,6 @@ private:
     QByteArray dhcpNode;
     QByteArray discoverable;
     QByteArray timeZoneSet;
-    QByteArray timeZone;
     QByteArray countdown;
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
