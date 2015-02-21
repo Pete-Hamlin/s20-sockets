@@ -94,7 +94,9 @@ void ConsoleReader::listSockets()
     {
         std::cout << "_____________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
-        std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString() << std::endl;
+        std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString()
+        << std::endl;
+        std::cout << "Countdown: " << (*i)->countdown.toHex().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
     std::cout << "d - update table data\nn - change socket name (max 16 characters)\np - toggle power state\nP - change remote password (max 12 characters)\n";

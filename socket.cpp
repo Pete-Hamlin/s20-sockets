@@ -39,11 +39,12 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     commandID[SocketData] = commandID[TableData];
     commandID[TimingData] = commandID[TableData];
     commandID[WriteSocketData] = QByteArray::fromHex ( "74 6d" );
+    QByteArray commandIDPower = QByteArray::fromHex ( "64 63" );
 
     // 2 hex bytes are the total length of the message
     datagram[Subscribe] = commandID[Subscribe] + mac + twenties + rmac + twenties;
-    datagram[PowerOn] = QByteArray::fromHex ( "64 63" ) + mac + twenties + zeros + one;
-    datagram[PowerOff] = QByteArray::fromHex ( "64 63" ) + mac + twenties + zeros + zero;
+    datagram[PowerOn] = commandIDPower + mac + twenties + zeros + one;
+    datagram[PowerOff] = commandIDPower + mac + twenties + zeros + zero;
     datagram[TableData] = commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
 
     udpSocket = new QUdpSocket();

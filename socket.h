@@ -51,6 +51,7 @@ public:
     bool powered;
     QByteArray socketName, remotePassword;
     QByteArray timeZone;
+    QByteArray countdown;
 
 private:
     enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
@@ -78,7 +79,6 @@ private:
     QByteArray dhcpNode;
     QByteArray discoverable;
     QByteArray timeZoneSet;
-    QByteArray countdown;
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
     const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding, 6 spaces

@@ -16,6 +16,7 @@
  *************************************************************************/
 
 #include <QUdpSocket>
+#include <iostream>
 
 #include "consolereader.h"
 #include "server.h"
@@ -91,6 +92,7 @@ void Server::readPendingDatagrams()
                     }
 
                 }
+                std::cout << "Packet not belonging to any socket: " << reply.toHex().toStdString() << std::endl;
             }
         }
     }
