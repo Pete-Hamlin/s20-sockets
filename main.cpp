@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
 
     std::vector<Socket*> *sockets = new std::vector<Socket*>;
-    Server server(sockets);
+    Server server(sockets, 10000);
     ConsoleReader *reader = new ConsoleReader(sockets);
 
     return app.exec();

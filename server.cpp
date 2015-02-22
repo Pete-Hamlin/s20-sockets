@@ -21,28 +21,67 @@
 #include "consolereader.h"
 #include "server.h"
 
-Server::Server ( std::vector<Socket*> *sockets_vector )
+Server::Server ( std::vector<Socket*> *sockets_vector, uint16_t port )
 {
     sockets = sockets_vector;
-    QUdpSocket *udpSocketSend = new QUdpSocket();
     udpSocketGet = new QUdpSocket();
-
-    udpSocketSend->connectToHost ( QHostAddress::Broadcast, 10000 );
-    udpSocketGet->bind ( QHostAddress::Any, 10000);
-
+    udpSocketGet->bind ( QHostAddress::Any, port );
     connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
-
-    udpSocketSend->write ( discover );
-    udpSocketSend->write ( discover );
-    udpSocketSend->disconnectFromHost();
-    delete udpSocketSend;
+    discoverSockets(port);
 
     start();
+}
+
+Server::Server(uint16_t port, QByteArray ssid, QByteArray password)
+{
+    QUdpSocket *udpSocketSend = new QUdpSocket();
+    udpSocketGet = new QUdpSocket();
+    udpSocketGet->bind ( QHostAddress::Any, port);
+
+    QByteArray reply;
+
+    udpSocketGet->writeDatagram ( QByteArray::fromStdString("HF-A11ASSISTHREAD"), QHostAddress::Broadcast, port );
+    reply = listen(QByteArray::fromStdString("HF-A11ASSISTHREAD"));
+    QList<QByteArray> list = reply.split(',');
+    QHostAddress ip(QString::fromLatin1(list[0]));
+    std::cout << "IP: " << ip.toString().toStdString() << std::endl;
+    udpSocketGet->writeDatagram ( QByteArray::fromStdString("+ok"), ip, port );
+    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSSSID=") + ssid + QByteArray::fromStdString("\r"), ip, port );
+    listen();
+    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSKEY=WPA2PSK,AES,") + password + QByteArray::fromStdString("\r"), ip, port ); // FIXME: support different security settings
+    listen();
+    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WMODE=STA\r"), ip, port );
+    listen();
+    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+Z\r"), ip, port ); // reboot
+    // FIXME: discover the new socket
 }
 
 Server::~Server()
 {
     delete udpSocketGet;
+}
+
+QByteArray Server::listen(QByteArray message)
+{
+    QByteArray reply;
+    QHostAddress sender;
+    quint16 senderPort;
+    bool stop = false;
+    while ( !stop )
+    {
+        QThread::msleep(50);
+        while ( udpSocketGet->hasPendingDatagrams() )
+        {
+            reply.resize ( udpSocketGet->pendingDatagramSize() );
+            udpSocketGet->readDatagram ( reply.data(), reply.size(), &sender, &senderPort );
+            if (reply != message)
+            {
+                stop = true;
+                std::cout << reply.toStdString() << std::endl;
+            }
+        }
+    }
+    return reply;
 }
 
 void Server::run()
@@ -92,8 +131,17 @@ void Server::readPendingDatagrams()
                     }
 
                 }
-                std::cout << "Packet not belonging to any socket: " << reply.toHex().toStdString() << std::endl;
             }
         }
     }
+}
+
+void Server::discoverSockets(uint16_t port)
+{
+    QUdpSocket *udpSocketSend = new QUdpSocket();
+    udpSocketSend->connectToHost ( QHostAddress::Broadcast, port );
+    udpSocketSend->write ( discover );
+    udpSocketSend->write ( discover );
+    udpSocketSend->disconnectFromHost();
+    delete udpSocketSend;
 }

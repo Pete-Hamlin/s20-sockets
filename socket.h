@@ -37,7 +37,7 @@ Q_SIGNALS:
     void datagramQueued();
 
 public:
-    Socket ( QHostAddress, QByteArray );
+    Socket ( QHostAddress, QByteArray ); // from discovery packet
     ~Socket();
     void toggle();
     void tableData();

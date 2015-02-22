@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "consolereader.h"
+#include "server.h"
 
 ConsoleReader::ConsoleReader ( std::vector<Socket*> *sockets_vector )
 {
@@ -43,6 +44,18 @@ void ConsoleReader::run()
         std::cin >> command;
         switch ( command[0] )
         {
+        case 'a':
+        {
+            std::cout << "Please set your Orvibo socket to pair mode (rapidly blinking blue light) and connect computer to socket's WiFi network (WiWo-S20)" << std::endl;
+            std::string ssid;
+            std::cout << "SSID of your Wifi: ";
+            std::cin >> ssid;
+            std::string password;
+            std::cout << "Password: ";
+            std::cin >> password;
+            Server *server = new Server(48899, QByteArray::fromStdString(ssid), QByteArray::fromStdString(password)); // HF-A11 chip can be controlled over port 48899
+            break;
+        }
         case 'd':
             (*sockets) [number]->tableData();
             break;
@@ -94,12 +107,11 @@ void ConsoleReader::listSockets()
     {
         std::cout << "_____________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
-        std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString()
-        << std::endl;
+        std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString() << std::endl;
         std::cout << "Countdown: " << (*i)->countdown.toHex().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
-    std::cout << "d - update table data\nn - change socket name (max 16 characters)\np - toggle power state\nP - change remote password (max 12 characters)\n";
-    std::cout << "q - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
+    std::cout << "a - add unpaired socket (WiFi needed)\nd - update table data\nn - change socket name (max 16 characters)\np - toggle power state\n";
+    std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
     std::cout << "Enter command: " << std::endl;
 }
