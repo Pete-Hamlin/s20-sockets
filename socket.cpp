@@ -51,7 +51,6 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     udpSocket->connectToHost ( ip, 10000 );
 
     connect (this, &Socket::datagramQueued, this, &Socket::listen);
-    subscribed = false;
     subscribeTimer = new QTimer(this);
     subscribeTimer->setInterval(2*60*1000); // 2 min
     subscribeTimer->setSingleShot(false);
@@ -174,8 +173,6 @@ bool Socket::parseReply ( QByteArray reply )
     switch ( datagram )
     {
     case Subscribe:
-        subscribed = true;
-        subscribeTimer->setInterval(2*60*1000); // 2min
     case PowerOff:
     case PowerOn:
     {

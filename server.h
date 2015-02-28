@@ -26,20 +26,25 @@ class QUdpSocket;
 
 class Server : public QThread
 {
+Q_OBJECT
+
 public:
-    Server ( std::vector<Socket*> *sockets_vector, uint16_t port );
-    Server ( uint16_t port, QByteArray ssid, QByteArray password );
+    Server ( std::vector<Socket*> *sockets_vector );
+    Server ( uint16_t port, QByteArray password );
     ~Server();
 
+    void discoverSockets();
     void readPendingDatagrams();
     void run();
+
+Q_SIGNALS:
+    void discovered();
 
 private:
     QByteArray discover = QByteArray::fromHex ( "68 64 00 06 71 61" );
     QUdpSocket *udpSocketGet;
     std::vector<Socket*> *sockets;
 
-    void discoverSockets(uint16_t port);
     QByteArray listen( QByteArray message = 0 );
 };
 

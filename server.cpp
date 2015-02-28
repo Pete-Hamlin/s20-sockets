@@ -15,25 +15,65 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
+#include <QNetworkConfiguration>
+#include <QNetworkConfigurationManager>
+#include <QNetworkSession>
+
+#include <QTimer>
 #include <QUdpSocket>
 #include <iostream>
 
 #include "consolereader.h"
 #include "server.h"
 
-Server::Server ( std::vector<Socket*> *sockets_vector, uint16_t port )
+Server::Server ( std::vector<Socket*> *sockets_vector )
 {
     sockets = sockets_vector;
     udpSocketGet = new QUdpSocket();
-    udpSocketGet->bind ( QHostAddress::Any, port );
+    udpSocketGet->bind ( QHostAddress::Any, 10000 );
     connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
-    discoverSockets(port);
+    discoverSockets();
+    QTimer *discoverTimer = new QTimer(this);
+    discoverTimer->setInterval(1*60*1000); // 1 min
+    discoverTimer->setSingleShot(false);
+    connect(discoverTimer, &QTimer::timeout, this, &Server::discoverSockets);
+    discoverTimer->start();
 
     start();
 }
 
-Server::Server(uint16_t port, QByteArray ssid, QByteArray password)
+Server::Server(uint16_t port, QByteArray password)
 {
+    QNetworkConfiguration *cfg = new QNetworkConfiguration;
+    QNetworkConfigurationManager *ncm = new QNetworkConfigurationManager;
+    QEventLoop *loop = new QEventLoop;
+    loop->connect(ncm, &QNetworkConfigurationManager::updateCompleted, loop, &QEventLoop::quit);
+    ncm->updateConfigurations();
+    loop->exec();
+    delete loop;
+    *cfg = ncm->defaultConfiguration();
+    QByteArray ssid = cfg->name().toLocal8Bit();
+
+    auto nc = ncm->allConfigurations();
+
+    for (auto &x : nc)
+    {
+        if (x.bearerType() == QNetworkConfiguration::BearerWLAN)
+        {
+            if (x.name() == "WiWo-S20")
+            {
+                std::cout << "Connecting to WiWo-S20 wireless" << std::endl;
+                cfg = &x;
+            }
+        }
+    }
+
+    auto session = new QNetworkSession(*cfg, this);
+    session->open();
+    std::cout << "Wait for connected!" << std::endl;
+    if (session->waitForOpened())
+        std::cout << "Connected!" << std::endl;
+
     QUdpSocket *udpSocketSend = new QUdpSocket();
     udpSocketGet = new QUdpSocket();
     udpSocketGet->bind ( QHostAddress::Any, port);
@@ -49,11 +89,14 @@ Server::Server(uint16_t port, QByteArray ssid, QByteArray password)
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSSSID=") + ssid + QByteArray::fromStdString("\r"), ip, port );
     listen();
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSKEY=WPA2PSK,AES,") + password + QByteArray::fromStdString("\r"), ip, port ); // FIXME: support different security settings
+    // OPEN, SHARED, WPAPSK......NONE, WEP, TKIP, AES
     listen();
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WMODE=STA\r"), ip, port );
     listen();
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+Z\r"), ip, port ); // reboot
+    session->close();
     // FIXME: discover the new socket
+    std::cout << "Finished" << std::endl;
 }
 
 Server::~Server()
@@ -117,6 +160,7 @@ void Server::readPendingDatagrams()
                 {
                     Socket *socket = new Socket ( sender, reply );
                     sockets->push_back ( socket );
+		    Q_EMIT discovered();
                 }
             }
             else
@@ -136,10 +180,10 @@ void Server::readPendingDatagrams()
     }
 }
 
-void Server::discoverSockets(uint16_t port)
+void Server::discoverSockets()
 {
     QUdpSocket *udpSocketSend = new QUdpSocket();
-    udpSocketSend->connectToHost ( QHostAddress::Broadcast, port );
+    udpSocketSend->connectToHost ( QHostAddress::Broadcast, 10000 );
     udpSocketSend->write ( discover );
     udpSocketSend->write ( discover );
     udpSocketSend->disconnectFromHost();

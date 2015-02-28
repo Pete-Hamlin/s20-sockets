@@ -29,6 +29,7 @@ public:
     ConsoleReader ( std::vector<Socket*> *sockets_vector );
     void run();
     void listSockets();
+    void connectSignals();
 
 private:
     std::vector<Socket*> *sockets;
