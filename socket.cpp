@@ -74,17 +74,26 @@ void Socket::sendDatagram ( Datagram d )
 
 void Socket::run()
 {
+    unsigned short retryCount = 0;
+    QByteArray currentDatagram, previousDatagram = 0, recordLength;
     while ( commands.size() > 0 )
     {
-        QByteArray currentDatagram = datagram[commands.head()];
-        QByteArray recordLength;
+        currentDatagram = datagram[commands.head()];
+        if ( previousDatagram == currentDatagram )
+            ++retryCount;
+        if ( retryCount == 5 )
+        {
+            std::cout << "Stop retrying: " << currentDatagram.toHex().toStdString() << std::endl;
+            commands.dequeue();
+	    retryCount = 0;
+        }
         QDataStream stream(&recordLength, QIODevice::WriteOnly);
         stream.setByteOrder(QDataStream::BigEndian);
         uint16_t length = currentDatagram.length() + 4; // +4 for magicKey and total message length
         stream << length;
-        currentDatagram = magicKey + recordLength + currentDatagram;
 
-        udpSocket->write ( currentDatagram );
+        udpSocket->write ( magicKey + recordLength + currentDatagram );
+	previousDatagram = currentDatagram;
         QThread::msleep(100);
     }
 }
