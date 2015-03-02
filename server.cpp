@@ -44,31 +44,35 @@ Server::Server ( std::vector<Socket*> *sockets_vector )
 
 Server::Server(uint16_t port, QByteArray password)
 {
+    QNetworkConfiguration *cfgInitial = new QNetworkConfiguration;
     QNetworkConfiguration *cfg = new QNetworkConfiguration;
     QNetworkConfigurationManager *ncm = new QNetworkConfigurationManager;
-    QEventLoop *loop = new QEventLoop;
-    loop->connect(ncm, &QNetworkConfigurationManager::updateCompleted, loop, &QEventLoop::quit);
     ncm->updateConfigurations();
-    loop->exec();
-    delete loop;
-    *cfg = ncm->defaultConfiguration();
-    QByteArray ssid = cfg->name().toLocal8Bit();
+    *cfgInitial = ncm->defaultConfiguration();
+    QByteArray ssid = cfgInitial->name().toLocal8Bit();
 
-    auto nc = ncm->allConfigurations();
-
-    for (auto &x : nc)
+    bool stop = false;
+    while ( !stop )
     {
-        if (x.bearerType() == QNetworkConfiguration::BearerWLAN)
+        QThread::sleep(1);
+
+        auto nc = ncm->allConfigurations();
+
+        for (auto &x : nc)
         {
-            if (x.name() == "WiWo-S20")
+            if (x.bearerType() == QNetworkConfiguration::BearerWLAN)
             {
-                std::cout << "Connecting to WiWo-S20 wireless" << std::endl;
-                cfg = &x;
+                if (x.name() == "WiWo-S20")
+                {
+                    std::cout << "Connecting to WiWo-S20 wireless" << std::endl;
+                    cfg = &x;
+                    stop = true;
+                }
             }
         }
     }
 
-    auto session = new QNetworkSession(*cfg, this);
+    QNetworkSession *session = new QNetworkSession(*cfg, this);
     session->open();
     std::cout << "Wait for connected!" << std::endl;
     if (session->waitForOpened())
@@ -97,6 +101,11 @@ Server::Server(uint16_t port, QByteArray password)
     session->close();
     // FIXME: discover the new socket
     std::cout << "Finished" << std::endl;
+    session = new QNetworkSession(*cfgInitial, this);
+    session->open();
+    if (session->waitForOpened())
+        std::cout << "Connected!" << std::endl;
+    discoverSockets();
 }
 
 Server::~Server()
