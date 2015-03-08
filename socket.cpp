@@ -77,7 +77,7 @@ void Socket::sendDatagram ( Datagram d )
 void Socket::run()
 {
     QMutex mutex;
-    if (!mutex.tryLock())
+    if ( !mutex.tryLock() )
         return;
 
     unsigned short retryCount = 0;
@@ -193,8 +193,8 @@ bool Socket::parseReply ( QByteArray reply )
     case PowerOn:
     {
         bool poweredOld = powered;
-        powered = reply.right ( 1 ) == one;
-        if (powered != poweredOld)
+        powered = reply.right(1) == one;
+        if ( powered != poweredOld )
             Q_EMIT stateChanged();
         if ( datagram == PowerOff && powered == true ) // Required to deque
         {
