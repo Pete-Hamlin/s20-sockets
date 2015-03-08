@@ -19,6 +19,8 @@
 
 #include <algorithm>
 #include <iostream>
+
+#include <QMutex>
 #include <QThread>
 #include <QUdpSocket>
 
@@ -74,6 +76,10 @@ void Socket::sendDatagram ( Datagram d )
 
 void Socket::run()
 {
+    QMutex mutex;
+    if (!mutex.tryLock())
+        return;
+
     unsigned short retryCount = 0;
     QByteArray currentDatagram, previousDatagram = 0, recordLength;
     while ( commands.size() > 0 )
@@ -85,7 +91,7 @@ void Socket::run()
         {
             std::cout << "Stop retrying: " << currentDatagram.toHex().toStdString() << std::endl;
             commands.dequeue();
-	    retryCount = 0;
+            retryCount = 0;
         }
         QDataStream stream(&recordLength, QIODevice::WriteOnly);
         stream.setByteOrder(QDataStream::BigEndian);
@@ -93,9 +99,10 @@ void Socket::run()
         stream << length;
 
         udpSocket->write ( magicKey + recordLength + currentDatagram );
-	previousDatagram = currentDatagram;
+        previousDatagram = currentDatagram;
         QThread::msleep(100);
     }
+    mutex.unlock();
 }
 
 void Socket::subscribe()
@@ -202,7 +209,7 @@ bool Socket::parseReply ( QByteArray reply )
         break;
     case SocketData:
     {
-        std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
+//         std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
         unsigned short int index = reply.indexOf ( rmac + twenties );
         versionID = reply.mid ( index - 14, 2 );
         index += 12; // length of rmac + padding
@@ -241,6 +248,7 @@ bool Socket::parseReply ( QByteArray reply )
         break;
     }
     case TimingData:
+        std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
         break;
     case WriteSocketData:
         sendDatagram ( SocketData );
