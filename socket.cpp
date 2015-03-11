@@ -52,7 +52,7 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     udpSocket = new QUdpSocket();
     udpSocket->connectToHost ( ip, 10000 );
 
-    connect (this, &Socket::datagramQueued, this, &Socket::listen);
+    connect (this, &Socket::datagramQueued, this, &Socket::processQueue);
     subscribeTimer = new QTimer(this);
     subscribeTimer->setInterval(2*60*1000); // 2 min
     subscribeTimer->setSingleShot(false);
@@ -78,7 +78,9 @@ void Socket::run()
 {
     QMutex mutex;
     if ( !mutex.tryLock() )
+    {
         return;
+    }
 
     unsigned short retryCount = 0;
     QByteArray currentDatagram, previousDatagram = 0, recordLength;
@@ -86,7 +88,9 @@ void Socket::run()
     {
         currentDatagram = datagram[commands.head()];
         if ( previousDatagram == currentDatagram )
+        {
             ++retryCount;
+        }
         if ( retryCount == 5 )
         {
             std::cout << "Stop retrying: " << currentDatagram.toHex().toStdString() << std::endl;
@@ -162,7 +166,7 @@ void Socket::tableData()
 
 bool Socket::parseReply ( QByteArray reply )
 {
-    if ( reply.left ( 2 ) != magicKey )
+    if ( reply.left(2) != magicKey )
     {
         return false;
     }
@@ -182,7 +186,11 @@ bool Socket::parseReply ( QByteArray reply )
         case 4:
             datagram = SocketData;
             break;
+        case 0:
+            qWarning() << "No table"; // FIXME: initial data query
         default:
+            qWarning() << "Failed to identify data table.";
+            datagram = TableData;
             return false;
         }
     }
@@ -195,7 +203,9 @@ bool Socket::parseReply ( QByteArray reply )
         bool poweredOld = powered;
         powered = reply.right(1) == one;
         if ( powered != poweredOld )
+        {
             Q_EMIT stateChanged();
+        }
         if ( datagram == PowerOff && powered == true ) // Required to deque
         {
             datagram = PowerOn;

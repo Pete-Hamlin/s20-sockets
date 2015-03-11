@@ -48,4 +48,7 @@ private:
     QByteArray listen( QByteArray message = 0 );
 };
 
+void broadcastPassword(QString password);
+QByteArray fives(unsigned short int length);
+
 #endif  /* SERVER_H */

@@ -18,9 +18,9 @@
 #include <QNetworkConfiguration>
 #include <QNetworkConfigurationManager>
 #include <QNetworkSession>
-
 #include <QTimer>
 #include <QUdpSocket>
+
 #include <iostream>
 
 #include "consolereader.h"
@@ -169,7 +169,7 @@ void Server::readPendingDatagrams()
                 {
                     Socket *socket = new Socket ( sender, reply );
                     sockets->push_back ( socket );
-		    Q_EMIT discovered();
+                    Q_EMIT discovered();
                 }
             }
             else
@@ -197,4 +197,54 @@ void Server::discoverSockets()
     udpSocketSend->write ( discover );
     udpSocketSend->disconnectFromHost();
     delete udpSocketSend;
+}
+
+void broadcastPassword(QString password)
+{
+    QUdpSocket *udpSocket = new QUdpSocket();
+    udpSocket->connectToHost ( QHostAddress::Broadcast, 49999 );
+    uint sleep = 15;
+    for (uint j=0; j < 4; ++j) // FIXME: stopping loop on discovery
+    {
+        std::cout << j << std::endl;
+        for (unsigned short int i = 0; i < 200; ++i)
+        {
+            udpSocket->write ( fives(76) );
+            QThread::msleep(sleep);
+        }
+        for (unsigned short int i = 0; i < 3; ++i)
+        {
+            udpSocket->write ( fives(89) );
+            QThread::msleep(sleep);
+        }
+
+        QChar *data = password.data();
+        while (!data->isNull())
+        {
+            udpSocket->write( fives(data->unicode() + 76) );
+            QThread::msleep(sleep);
+            ++data;
+        }
+        for (unsigned short int i = 0; i < 3; ++i)
+        {
+            udpSocket->write ( fives(86) );
+            QThread::msleep(sleep);
+        }
+        for (unsigned short int i = 0; i < 3; ++i)
+        {
+            udpSocket->write ( fives(332 + password.length()) );
+            QThread::msleep(sleep);
+        }
+    }
+
+    udpSocket->disconnectFromHost();
+    delete udpSocket;
+    // FIXME: special slightly modified SocketData packet might is needed here
+}
+
+QByteArray fives(unsigned short int length)
+{
+    QByteArray packet;
+    packet.fill(0x05, length);
+    return packet;
 }

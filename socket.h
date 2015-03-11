@@ -58,7 +58,7 @@ private:
 
     void sendDatagram ( Datagram );
     void subscribe();
-    void listen() { start(); }
+    void processQueue() { start(); }
     void run();
     void writeSocketData (QByteArray name, QByteArray password, QByteArray timezone);
 

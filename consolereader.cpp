@@ -46,7 +46,16 @@ void ConsoleReader::run()
             std::string password;
             std::cout << "Password: ";
             std::cin >> password;
-            Server *server = new Server(48899, QByteArray::fromStdString(password)); // HF-A11 chip can be controlled over port 48899
+            Server *server = new Server(48899, QByteArray::fromStdString(password)); // HF-LPB100 chip can be controlled over port 48899
+            break;
+        }
+        case 'A':
+        {
+            std::cout << "Please set your Orvibo socket to factory reset mode (rapidly blinking red light)" << std::endl;
+            std::string password;
+            std::cout << "Password: ";
+            std::cin >> password;
+            broadcastPassword(QString::fromStdString(password)); // HF-LPB100 chip can be controlled over port 49999
             break;
         }
         case 'd':
@@ -104,7 +113,7 @@ void ConsoleReader::listSockets()
         std::cout << "Countdown: " << (*i)->countdown.toHex().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
-    std::cout << "a - add unpaired socket (WiFi needed)\nd - update table data\nn - change socket name (max 16 characters)\np - toggle power state\n";
+    std::cout << "a - add unpaired socket (WiFi needed)\nA - add unpaired socket (no WiFi needed)\nd - update table data\nn - change socket name (max 16 characters)\np - toggle power state\n";
     std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
     std::cout << "Enter command: " << std::endl;
 }
