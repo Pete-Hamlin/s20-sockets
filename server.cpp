@@ -15,13 +15,12 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
+#include <QDateTime>
 #include <QNetworkConfiguration>
 #include <QNetworkConfigurationManager>
 #include <QNetworkSession>
 #include <QTimer>
 #include <QUdpSocket>
-
-#include <iostream>
 
 #include "consolereader.h"
 #include "server.h"
@@ -64,7 +63,7 @@ Server::Server(uint16_t port, QByteArray password)
             {
                 if (x.name() == "WiWo-S20")
                 {
-                    std::cout << "Connecting to WiWo-S20 wireless" << std::endl;
+                    qWarning() << "Connecting to WiWo-S20 wireless";
                     cfg = &x;
                     stop = true;
                 }
@@ -74,9 +73,9 @@ Server::Server(uint16_t port, QByteArray password)
 
     QNetworkSession *session = new QNetworkSession(*cfg, this);
     session->open();
-    std::cout << "Wait for connected!" << std::endl;
+    qWarning() << "Wait for connected!";
     if (session->waitForOpened())
-        std::cout << "Connected!" << std::endl;
+        qWarning() << "Connected!";
 
     QUdpSocket *udpSocketSend = new QUdpSocket();
     udpSocketGet = new QUdpSocket();
@@ -88,7 +87,7 @@ Server::Server(uint16_t port, QByteArray password)
     reply = listen(QByteArray::fromStdString("HF-A11ASSISTHREAD"));
     QList<QByteArray> list = reply.split(',');
     QHostAddress ip(QString::fromLatin1(list[0]));
-    std::cout << "IP: " << ip.toString().toStdString() << std::endl;
+    qWarning() << "IP: " << ip.toString();
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("+ok"), ip, port );
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSSSID=") + ssid + QByteArray::fromStdString("\r"), ip, port );
     listen();
@@ -100,11 +99,11 @@ Server::Server(uint16_t port, QByteArray password)
     udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+Z\r"), ip, port ); // reboot
     session->close();
     // FIXME: discover the new socket
-    std::cout << "Finished" << std::endl;
+    qWarning() << "Finished";
     session = new QNetworkSession(*cfgInitial, this);
     session->open();
     if (session->waitForOpened())
-        std::cout << "Connected!" << std::endl;
+        qWarning() << "Connected";
     discoverSockets();
 }
 
@@ -129,7 +128,6 @@ QByteArray Server::listen(QByteArray message)
             if (reply != message)
             {
                 stop = true;
-                std::cout << reply.toStdString() << std::endl;
             }
         }
     }
@@ -156,6 +154,14 @@ void Server::readPendingDatagrams()
         {
             if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) ) // Reply to discover packet
             {
+                QByteArray timeArray = reply.right(5).left(4);
+                QDataStream stream(&timeArray, QIODevice::ReadOnly);
+                stream.setByteOrder(QDataStream::LittleEndian);
+                uint32_t time;
+                stream >> time;
+                QDateTime socketDateTime(QDate(1900, 01, 01));
+                qWarning() << socketDateTime.addSecs(time).toString();
+
                 bool duplicate = false;
                 for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
                 {
@@ -206,7 +212,7 @@ void broadcastPassword(QString password)
     uint sleep = 15;
     for (uint j=0; j < 4; ++j) // FIXME: stopping loop on discovery
     {
-        std::cout << j << std::endl;
+        qWarning() << j;
         for (unsigned short int i = 0; i < 200; ++i)
         {
             udpSocket->write ( fives(76) );
