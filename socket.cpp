@@ -50,7 +50,7 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     datagram[Subscribe] = commandID[Subscribe] + mac + twenties + rmac + twenties;
     datagram[PowerOn] = commandIDPower + mac + twenties + zeros + one;
     datagram[PowerOff] = commandIDPower + mac + twenties + zeros + zero;
-    datagram[TableData] = commandID[TableData] + mac + twenties + zeros + QByteArray::fromHex ( "01 00 00" ) + zeros;
+    datagram[TableData] = commandID[TableData] + mac + twenties + /*zeros*/QByteArray::fromHex ( "72 00 00 00" ) + QByteArray::fromHex ( "01 00 00" ) + zeros;
 
     udpSocket = new QUdpSocket();
     udpSocket->connectToHost ( ip, 10000 );
@@ -183,7 +183,7 @@ bool Socket::parseReply ( QByteArray reply )
     unsigned int datagram = std::distance ( commandID, std::find ( commandID, commandID + MaxCommands, id ) ); // match commandID with enum
     if ( datagram == TableData ) // determine the table number
     {
-        unsigned int table = reply[reply.indexOf ( zeros ) + 4]; // Table number immediately follows zeros
+        unsigned int table = reply[reply.indexOf ( twenties ) + 11];
         switch ( table )
         {
         case 1:
