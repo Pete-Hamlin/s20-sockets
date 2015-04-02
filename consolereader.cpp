@@ -119,7 +119,7 @@ void ConsoleReader::listSockets()
     std::cout << "a - add unpaired socket (WiFi needed)\n";
     std::cout << "A - add unpaired socket (no WiFi needed)\n";
     std::cout << "d - update table data\n";
-    std::cout << "D - print internal socket date and time\n";
+    std::cout << "D - resend discovery packet to the current socket\n";
     std::cout << "n - change socket name (max 16 characters)\n";
     std::cout << "p - toggle power state\n";
     std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;

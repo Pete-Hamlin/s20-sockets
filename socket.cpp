@@ -215,10 +215,6 @@ bool Socket::parseReply ( QByteArray reply )
         socketDateTime.setDate(QDate(1900, 01, 01)); // midnight 1900-01-01
         socketDateTime.setTime(QTime(0, 0, 0));
         socketDateTime = socketDateTime.addSecs(time);
-        if ( !initializing )
-        {
-            Q_EMIT stateChanged();
-        }
     }
     case Subscribe:
     case PowerOff:
@@ -279,11 +275,10 @@ bool Socket::parseReply ( QByteArray reply )
         ++index;
         countdown = reply.mid ( index, 2 );
         Q_EMIT stateChanged();
-        initializing = false;
         break;
     }
     case TimingData:
-        std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
+//         std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
         break;
     case WriteSocketData:
         sendDatagram ( SocketData );

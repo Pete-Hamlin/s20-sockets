@@ -91,7 +91,7 @@ private:
 
     QUdpSocket *udpSocket;
     QTimer *subscribeTimer;
-    bool subscribed, initializing = true;
+    bool subscribed;
     QQueue<Datagram> commands;
 
 };
