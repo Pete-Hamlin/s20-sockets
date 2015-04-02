@@ -61,6 +61,9 @@ void ConsoleReader::run()
         case 'd':
             (*sockets) [number]->tableData();
             break;
+        case 'D':
+            (*sockets) [number]->discover();
+            break;
         case 'n':
         {
             std::string name;
@@ -110,10 +113,15 @@ void ConsoleReader::listSockets()
         std::cout << "_____________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
         std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString() << std::endl;
-        std::cout << "Countdown: " << (*i)->countdown.toHex().toStdString() << std::endl;
+        std::cout << "Countdown: " << (*i)->countdown.toHex().toStdString() << "\t\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
-    std::cout << "a - add unpaired socket (WiFi needed)\nA - add unpaired socket (no WiFi needed)\nd - update table data\nn - change socket name (max 16 characters)\np - toggle power state\n";
+    std::cout << "a - add unpaired socket (WiFi needed)\n";
+    std::cout << "A - add unpaired socket (no WiFi needed)\n";
+    std::cout << "d - update table data\n";
+    std::cout << "D - print internal socket date and time\n";
+    std::cout << "n - change socket name (max 16 characters)\n";
+    std::cout << "p - toggle power state\n";
     std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
     std::cout << "Enter command: " << std::endl;
 }

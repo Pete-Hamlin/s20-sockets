@@ -142,7 +142,7 @@ void Server::readPendingDatagrams()
 {
     while ( udpSocketGet->hasPendingDatagrams() )
     {
-        QByteArray reply;
+        QByteArray reply, mac;
         reply.resize ( udpSocketGet->pendingDatagramSize() );
         QHostAddress sender;
         quint16 senderPort;
@@ -151,7 +151,7 @@ void Server::readPendingDatagrams()
 
         if ( reply != discover && reply.left ( 2 ) == magicKey ) // check for Magic Key
         {
-            if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) ) // Reply to discover packet
+            if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) || reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 67" )) // Reply to discover packet
             {
                 bool duplicate = false;
                 for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
@@ -168,19 +168,20 @@ void Server::readPendingDatagrams()
                     sockets->push_back ( socket );
                     Q_EMIT discovered();
                 }
+                mac = reply.mid(7,6);
             }
             else
             {
-                QByteArray mac = reply.mid(6,6);
-                for ( std::vector<Socket*>::iterator i = sockets->begin() ; i != sockets->end(); ++i )
+                mac = reply.mid(6,6);
+            }
+            for ( std::vector<Socket*>::iterator i = sockets->begin() ; i != sockets->end(); ++i )
+            {
+                if ( (*i)->mac == mac )
                 {
-                    if ( (*i)->mac == mac )
-                    {
-                        (*i)->parseReply(reply);
-                        break;
-                    }
-
+                    (*i)->parseReply(reply);
+                    break;
                 }
+
             }
         }
     }

@@ -41,6 +41,7 @@ public:
     Socket ( QHostAddress, QByteArray ); // from discovery packet
     ~Socket();
     void toggle();
+    void discover();
     void tableData();
     void changeSocketName ( QString newName );
     void changeSocketPassword ( QString newPassword );
@@ -56,7 +57,7 @@ public:
     QDateTime socketDateTime;
 
 private:
-    enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
+    enum Datagram {GlobalDiscover, Discover, Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
 
     void sendDatagram ( Datagram );
     void subscribe();
@@ -90,7 +91,7 @@ private:
 
     QUdpSocket *udpSocket;
     QTimer *subscribeTimer;
-    bool subscribed;
+    bool subscribed, initializing = true;
     QQueue<Datagram> commands;
 
 };

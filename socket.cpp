@@ -34,15 +34,8 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     powered = reply.right ( 1 ) == one;
     // 68:64:00:06:71:61 initial detection ??
 
-    QByteArray timeArray = reply.right(5).left(4);
-    QDataStream stream(&timeArray, QIODevice::ReadOnly);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    uint32_t time;
-    stream >> time;
-    socketDateTime.setDate(QDate(1900, 01, 01)); // midnight 1900-01-01
-    socketDateTime = socketDateTime.addSecs(time);
-    qWarning() << "Socket clock:" << socketDateTime.toString();
-
+    commandID[GlobalDiscover] = QByteArray::fromHex ( "71 61" );
+    commandID[Discover] = QByteArray::fromHex ( "71 67" );
     commandID[Subscribe] = QByteArray::fromHex ( "63 6c" );
     commandID[PowerOn] = QByteArray::fromHex ( "73 66" );
     commandID[PowerOff] = commandID[PowerOn];
@@ -53,6 +46,7 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     QByteArray commandIDPower = QByteArray::fromHex ( "64 63" );
 
     // 2 hex bytes are the total length of the message
+    datagram[Discover] = commandID[Discover] + mac + twenties;
     datagram[Subscribe] = commandID[Subscribe] + mac + twenties + rmac + twenties;
     datagram[PowerOn] = commandIDPower + mac + twenties + zeros + one;
     datagram[PowerOff] = commandIDPower + mac + twenties + zeros + zero;
@@ -121,6 +115,11 @@ void Socket::run()
 void Socket::subscribe()
 {
     sendDatagram ( Subscribe );
+}
+
+void Socket::discover()
+{
+    sendDatagram ( Discover );
 }
 
 void Socket::toggle()
@@ -205,6 +204,22 @@ bool Socket::parseReply ( QByteArray reply )
     }
     switch ( datagram )
     {
+    case GlobalDiscover:
+    case Discover:
+    {
+        QByteArray timeArray = reply.right(5).left(4);
+        QDataStream stream(&timeArray, QIODevice::ReadOnly);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        uint32_t time;
+        stream >> time;
+        socketDateTime.setDate(QDate(1900, 01, 01)); // midnight 1900-01-01
+        socketDateTime.setTime(QTime(0, 0, 0));
+        socketDateTime = socketDateTime.addSecs(time);
+        if ( !initializing )
+        {
+            Q_EMIT stateChanged();
+        }
+    }
     case Subscribe:
     case PowerOff:
     case PowerOn:
@@ -264,6 +279,7 @@ bool Socket::parseReply ( QByteArray reply )
         ++index;
         countdown = reply.mid ( index, 2 );
         Q_EMIT stateChanged();
+        initializing = false;
         break;
     }
     case TimingData:
