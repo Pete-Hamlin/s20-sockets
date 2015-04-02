@@ -19,6 +19,7 @@
 #define SOCKET_H
 
 #include <QByteArray>
+#include <QDateTime>
 #include <QHostAddress>
 #include <QQueue>
 #include <QTimer>
@@ -52,6 +53,7 @@ public:
     QByteArray socketName, remotePassword;
     QByteArray timeZone;
     QByteArray countdown;
+    QDateTime socketDateTime;
 
 private:
     enum Datagram {Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};

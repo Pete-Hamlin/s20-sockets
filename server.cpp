@@ -15,7 +15,6 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.*
  *************************************************************************/
 
-#include <QDateTime>
 #include <QNetworkConfiguration>
 #include <QNetworkConfigurationManager>
 #include <QNetworkSession>
@@ -154,14 +153,6 @@ void Server::readPendingDatagrams()
         {
             if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) ) // Reply to discover packet
             {
-                QByteArray timeArray = reply.right(5).left(4);
-                QDataStream stream(&timeArray, QIODevice::ReadOnly);
-                stream.setByteOrder(QDataStream::LittleEndian);
-                uint32_t time;
-                stream >> time;
-                QDateTime socketDateTime(QDate(1900, 01, 01));
-                qWarning() << socketDateTime.addSecs(time).toString();
-
                 bool duplicate = false;
                 for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
                 {
