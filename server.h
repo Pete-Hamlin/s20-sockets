@@ -30,7 +30,7 @@ Q_OBJECT
 
 public:
     Server ( std::vector<Socket*> *sockets_vector );
-    Server ( uint16_t port, QByteArray password );
+    Server ( uint16_t port, QByteArray ssid, QByteArray password );
     ~Server();
 
     void discoverSockets();

@@ -40,14 +40,19 @@ Server::Server ( std::vector<Socket*> *sockets_vector )
     start();
 }
 
-Server::Server(uint16_t port, QByteArray password)
+Server::Server(uint16_t port, QByteArray ssid, QByteArray password)
 {
     QNetworkConfiguration *cfgInitial = new QNetworkConfiguration;
     QNetworkConfiguration *cfg = new QNetworkConfiguration;
     QNetworkConfigurationManager *ncm = new QNetworkConfigurationManager;
     ncm->updateConfigurations();
     *cfgInitial = ncm->defaultConfiguration();
-    QByteArray ssid = cfgInitial->name().toLocal8Bit();
+
+    if (ssid == "c")
+    {
+        ssid = cfgInitial->name().toLocal8Bit();
+        qDebug() << "SSID unspecified, using current network: " << ssid;
+    }
 
     bool stop = false;
     while ( !stop )

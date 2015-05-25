@@ -41,6 +41,8 @@ public:
     Socket ( QHostAddress, QByteArray ); // from discovery packet
     ~Socket();
     void toggle();
+    void powerOff();
+    void powerOn();
     void discover();
     void tableData();
     void changeSocketName ( QString newName );

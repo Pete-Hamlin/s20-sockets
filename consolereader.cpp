@@ -43,10 +43,12 @@ void ConsoleReader::run()
         case 'a':
         {
             std::cout << "Please set your Orvibo socket to pair mode (rapidly blinking blue light) and wait until new wifi network (WiWo-S20) appears" << std::endl;
-            std::string password;
+            std::string ssid, password;
+            std::cout << "Wireless name (\"c\" for current wifi): ";
+            std::cin >> ssid;
             std::cout << "Password: ";
             std::cin >> password;
-            Server *server = new Server(48899, QByteArray::fromStdString(password)); // HF-LPB100 chip can be controlled over port 48899
+            Server *server = new Server(48899, QByteArray::fromStdString(ssid), QByteArray::fromStdString(password)); // HF-LPB100 chip can be controlled over port 48899
             break;
         }
         case 'A':
@@ -74,6 +76,12 @@ void ConsoleReader::run()
         }
         case 'p':
             (*sockets) [number]->toggle();
+            break;
+        case 'o':
+            if (command == "off")
+                (*sockets) [number]->powerOff();
+            else if (command == "on")
+                (*sockets) [number]->powerOn();
             break;
         case 'P':
         {

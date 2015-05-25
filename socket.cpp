@@ -127,6 +127,20 @@ void Socket::toggle()
     sendDatagram ( powered ? PowerOff : PowerOn );
 }
 
+void Socket::powerOff()
+{
+    if (powered)
+        sendDatagram ( PowerOff );
+    Q_EMIT stateChanged();
+}
+
+void Socket::powerOn()
+{
+    if (!powered)
+        sendDatagram ( PowerOn );
+    Q_EMIT stateChanged();
+}
+
 void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
