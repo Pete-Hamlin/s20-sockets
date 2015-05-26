@@ -30,20 +30,18 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     mac = reply.mid ( 7, 6 );
     rmac = mac;
     std::reverse ( rmac.begin(), rmac.end() );
-
     powered = reply.right ( 1 ) == one;
-    // 68:64:00:06:71:61 initial detection ??
 
-    commandID[GlobalDiscover] = QByteArray::fromHex ( "71 61" );
-    commandID[Discover] = QByteArray::fromHex ( "71 67" );
-    commandID[Subscribe] = QByteArray::fromHex ( "63 6c" );
-    commandID[PowerOn] = QByteArray::fromHex ( "73 66" );
+    commandID[GlobalDiscover] = QStringLiteral( "qa" ).toLatin1(); // Query All
+    commandID[Discover] = QStringLiteral( "qg" ).toLatin1(); // qg
+    commandID[Subscribe] = QStringLiteral( "cl" ).toLatin1(); // Login Command
+    commandID[PowerOn] = QStringLiteral( "sf" ).toLatin1(); // sf (change of power state)
     commandID[PowerOff] = commandID[PowerOn];
-    commandID[TableData] = QByteArray::fromHex ( "72 74" );
+    commandID[TableData] = QStringLiteral( "rt" ).toLatin1(); // Read Table
     commandID[SocketData] = commandID[TableData];
     commandID[TimingData] = commandID[TableData];
-    commandID[WriteSocketData] = QByteArray::fromHex ( "74 6d" );
-    QByteArray commandIDPower = QByteArray::fromHex ( "64 63" );
+    commandID[WriteSocketData] = QStringLiteral( "tm" ).toLatin1(); // Table Modify
+    QByteArray commandIDPower = QStringLiteral( "dc" ).toLatin1(); // Socket change responce
 
     // 2 hex bytes are the total length of the message
     datagram[Discover] = commandID[Discover] + mac + twenties;

@@ -28,6 +28,7 @@ ConsoleReader::ConsoleReader ( std::vector<Socket*> *sockets_vector )
 
 void ConsoleReader::run()
 {
+    std::cout << "Copyright (C) 2015 Andrius Štikonas.\nLicense GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law." << std::endl;
     connectSignals();
     listSockets();
 
