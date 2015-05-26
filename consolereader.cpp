@@ -130,7 +130,7 @@ void ConsoleReader::listSockets()
     std::cout << "d - update table data\n";
     std::cout << "D - resend discovery packet to the current socket\n";
     std::cout << "n - change socket name (max 16 characters)\n";
-    std::cout << "p - toggle power state\n";
+    std::cout << "p - toggle power state (there are also \"on\" and \"off\" commands)\n";
     std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
     std::cout << "Enter command: " << std::endl;
 }
