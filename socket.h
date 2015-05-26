@@ -59,7 +59,18 @@ public:
     QDateTime socketDateTime;
 
 private:
-    enum Datagram {GlobalDiscover, Discover, Subscribe, PowerOff, PowerOn, TableData, SocketData, TimingData, WriteSocketData, MaxCommands};
+    enum Datagram {
+        QueryAll,
+        Discover,
+        Subscribe,
+        PowerOff,
+        PowerOn,
+        ReadTable,
+        SocketData,
+        TimingData,
+        TableModify,
+        MaxCommands
+};
 
     void sendDatagram ( Datagram );
     void subscribe();

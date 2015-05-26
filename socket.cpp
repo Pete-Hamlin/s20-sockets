@@ -32,15 +32,15 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     std::reverse ( rmac.begin(), rmac.end() );
     powered = reply.right ( 1 ) == one;
 
-    commandID[GlobalDiscover] = QStringLiteral( "qa" ).toLatin1(); // Query All
+    commandID[QueryAll] = QStringLiteral( "qa" ).toLatin1();
     commandID[Discover] = QStringLiteral( "qg" ).toLatin1(); // qg
     commandID[Subscribe] = QStringLiteral( "cl" ).toLatin1(); // Login Command
-    commandID[PowerOn] = QStringLiteral( "sf" ).toLatin1(); // sf (change of power state)
+    commandID[PowerOn] = QStringLiteral( "sf" ).toLatin1(); // State Flip (change of power state)
     commandID[PowerOff] = commandID[PowerOn];
-    commandID[TableData] = QStringLiteral( "rt" ).toLatin1(); // Read Table
-    commandID[SocketData] = commandID[TableData];
-    commandID[TimingData] = commandID[TableData];
-    commandID[WriteSocketData] = QStringLiteral( "tm" ).toLatin1(); // Table Modify
+    commandID[ReadTable] = QStringLiteral( "rt" ).toLatin1();
+    commandID[SocketData] = commandID[ReadTable];
+    commandID[TimingData] = commandID[ReadTable];
+    commandID[TableModify] = QStringLiteral( "tm" ).toLatin1();
     QByteArray commandIDPower = QStringLiteral( "dc" ).toLatin1(); // Socket change responce
 
     // 2 hex bytes are the total length of the message
@@ -48,7 +48,7 @@ Socket::Socket ( QHostAddress IPaddress, QByteArray reply )
     datagram[Subscribe] = commandID[Subscribe] + mac + twenties + rmac + twenties;
     datagram[PowerOn] = commandIDPower + mac + twenties + zeros + one;
     datagram[PowerOff] = commandIDPower + mac + twenties + zeros + zero;
-    datagram[TableData] = commandID[TableData] + mac + twenties + /*zeros*/QByteArray::fromHex ( "72 00 00 00" ) + QByteArray::fromHex ( "01 00 00" ) + zeros;
+    datagram[ReadTable] = commandID[ReadTable] + mac + twenties + /*zeros*/QByteArray::fromHex ( "72 00 00 00" ) + QByteArray::fromHex ( "01 00 00" ) + zeros;
 
     udpSocket = new QUdpSocket();
     udpSocket->connectToHost ( ip, 10000 );
@@ -170,13 +170,13 @@ void Socket::writeSocketData(QByteArray name, QByteArray password, QByteArray ti
     uint16_t length = record.length();
     stream << length;
 
-    datagram[WriteSocketData] = commandID[WriteSocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
-    sendDatagram ( WriteSocketData );
+    datagram[TableModify] = commandID[TableModify] + mac + twenties + zeros + QByteArray::fromHex ( "04:00:01" ) /*table number and unknown*/ + recordLength + record;
+    sendDatagram ( TableModify );
 }
 
 void Socket::tableData()
 {
-    sendDatagram ( TableData );
+    sendDatagram ( ReadTable );
     datagram[SocketData] = commandID[SocketData] + mac + twenties + zeros + QByteArray::fromHex ( "04 00 00" ) + zeros;
     datagram[TimingData] = commandID[TimingData] + mac + twenties + zeros + QByteArray::fromHex ( "03 00 00" ) + zeros;
     // table number + 00 + version number
@@ -193,7 +193,7 @@ bool Socket::parseReply ( QByteArray reply )
 
     QByteArray id = reply.mid ( 4, 2 );
     unsigned int datagram = std::distance ( commandID, std::find ( commandID, commandID + MaxCommands, id ) ); // match commandID with enum
-    if ( datagram == TableData ) // determine the table number
+    if ( datagram == ReadTable ) // determine the table number
     {
         unsigned int table = reply[reply.indexOf ( twenties ) + 11];
         switch ( table )
@@ -210,13 +210,13 @@ bool Socket::parseReply ( QByteArray reply )
             qWarning() << "No table"; // FIXME: initial data query
         default:
             qWarning() << "Failed to identify data table.";
-            datagram = TableData;
+            datagram = ReadTable;
             return false;
         }
     }
     switch ( datagram )
     {
-    case GlobalDiscover:
+    case QueryAll:
     case Discover:
     {
         QByteArray timeArray = reply.right(5).left(4);
@@ -244,7 +244,7 @@ bool Socket::parseReply ( QByteArray reply )
         }
         break;
     }
-    case TableData:
+    case ReadTable:
 //         FIXME: order might be swapped;
         socketTableVersion = reply.mid ( reply.indexOf ( QByteArray::fromHex ( "000100000600" ) ) + 6, 2 );
 //      000100000600
@@ -292,7 +292,7 @@ bool Socket::parseReply ( QByteArray reply )
     case TimingData:
 //         std::cout << reply.toHex().toStdString() << " " << datagram << std::endl; // for debugging purposes only
         break;
-    case WriteSocketData:
+    case TableModify:
         sendDatagram ( SocketData );
         break;
     default:

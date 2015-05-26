@@ -156,7 +156,7 @@ void Server::readPendingDatagrams()
 
         if ( reply != discover && reply.left ( 2 ) == magicKey ) // check for Magic Key
         {
-            if ( reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 61" ) || reply.mid ( 4, 2 ) == QByteArray::fromHex ( "71 67" )) // Reply to discover packet
+            if ( reply.mid ( 4, 2 ) == QStringLiteral("qa").toLatin1() || reply.mid ( 4, 2 ) == QStringLiteral("qg").toLatin1()) // Reply to discover packet
             {
                 bool duplicate = false;
                 for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
