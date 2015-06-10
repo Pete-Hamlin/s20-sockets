@@ -28,8 +28,6 @@ class Dialog;
 
 class Dialog : public QDialog
 {
-    Q_OBJECT
-
 public:
     explicit Dialog(std::vector<Socket*> *sockets_vector, QWidget *parent = 0);
     ~Dialog();
