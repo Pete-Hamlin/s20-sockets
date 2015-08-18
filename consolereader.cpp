@@ -61,6 +61,15 @@ void ConsoleReader::run()
             broadcastPassword(QString::fromStdString(password)); // HF-LPB100 chip can be controlled over port 49999
             break;
         }
+        case 'c':
+            uint16_t countdown;
+            std::cout << "Countdown time in seconds: ";
+            std::cin >> countdown;
+            (*sockets) [number]->setCountDown(countdown);
+            break;
+        case 'C':
+            (*sockets) [number]->setCountDown(countdown);
+            break;
         case 'd':
             (*sockets) [number]->tableData();
             break;
@@ -122,11 +131,13 @@ void ConsoleReader::listSockets()
         std::cout << "_____________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
         std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString() << std::endl;
-        std::cout << "Countdown: " << (*i)->countdown.toHex().toStdString() << "\t\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
+        std::cout << "Countdown: " << (*i)->countdown << " " << ( (*i)->countdownEnabled ? "(enabled)" : "(disabled)" )  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
     std::cout << "a - add unpaired socket (WiFi needed)\n";
     std::cout << "A - add unpaired socket (no WiFi needed)\n";
+    std::cout << "c - set countdown\n";
+    std::cout << "C - enable/disable countdown\n";
     std::cout << "d - update table data\n";
     std::cout << "D - resend discovery packet to the current socket\n";
     std::cout << "n - change socket name (max 16 characters)\n";

@@ -48,6 +48,7 @@ public:
     void changeSocketName ( QString newName );
     void changeSocketPassword ( QString newPassword );
     void changeTimezone ( int8_t newTimezone );
+    void setCountDown ( uint16_t countdown );
     bool parseReply ( QByteArray );
 
     QHostAddress ip;
@@ -55,7 +56,8 @@ public:
     bool powered;
     QByteArray socketName, remotePassword;
     QByteArray timeZone;
-    QByteArray countdown;
+    uint16_t countdown;
+    bool countdownEnabled;
     QDateTime socketDateTime;
 
 private:
@@ -76,7 +78,7 @@ private:
     void subscribe();
     void processQueue() { start(); }
     void run();
-    void writeSocketData (QByteArray name, QByteArray password, QByteArray timezone);
+    void writeSocketData (QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown);
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];

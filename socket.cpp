@@ -142,13 +142,13 @@ void Socket::powerOn()
 void Socket::changeSocketName ( QString newName )
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
-    writeSocketData(name, remotePassword, timeZone);
+    writeSocketData(name, remotePassword, timeZone, countdown);
 }
 
 void Socket::changeSocketPassword ( QString newPassword )
 {
     QByteArray password = newPassword.toLatin1().leftJustified(12, ' ', true);
-    writeSocketData(socketName, password, timeZone);
+    writeSocketData(socketName, password, timeZone, countdown);
 }
 
 void Socket::changeTimezone ( int8_t newTimezone )
@@ -157,12 +157,22 @@ void Socket::changeTimezone ( int8_t newTimezone )
     QDataStream stream(&timezone, QIODevice::WriteOnly);
     stream.setByteOrder(QDataStream::BigEndian);
     stream << newTimezone;
-    writeSocketData(socketName, remotePassword, timezone);
+    writeSocketData(socketName, remotePassword, timezone, countdown);
 }
 
-void Socket::writeSocketData(QByteArray name, QByteArray password, QByteArray timezone)
+void Socket::setCountDown ( uint16_t countdown )
 {
-    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + password + name + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timezone + QByteArray::fromHex ( "00:ff" ) + countdown;
+    writeSocketData(socketName, remotePassword, timeZone, countdown);
+}
+
+void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown)
+{
+    QByteArray countDown;
+    QDataStream stream1(&countDown, QIODevice::WriteOnly);
+    stream1.setByteOrder(QDataStream::LittleEndian);
+    stream1 << countdown;
+
+    QByteArray record = QByteArray::fromHex ( "01:00" ) /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + ( countdownEnabled ? QByteArray::fromHex ( "01:00" ) : QByteArray::fromHex ( "00:ff" ) ) + countDown + zeros + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
 
     QByteArray recordLength;
     QDataStream stream(&recordLength, QIODevice::WriteOnly);
@@ -285,7 +295,12 @@ bool Socket::parseReply ( QByteArray reply )
         ++index;
         timeZone = reply.mid ( index, 1 );
         ++index;
-        countdown = reply.mid ( index, 2 );
+        countdownEnabled = reply.mid ( index, 2 ) == QByteArray::fromHex ( "01:00" );
+        index += 2;
+        QByteArray countDown = reply.mid ( index, 2 );
+        QDataStream stream(&countDown, QIODevice::ReadOnly);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        stream >> countdown;
         Q_EMIT stateChanged();
         break;
     }
