@@ -36,8 +36,7 @@ Dialog::~Dialog()
 
 void Dialog::updateUi()
 {
-    for ( unsigned int i = 0; i < (*sockets).size(); ++i)
-    {
+    for (unsigned int i = 0; i < (*sockets).size(); ++i) {
         ui->toggleButton->setText((*sockets)[i]->powered ? QStringLiteral("Turn off") : QStringLiteral("Turn on"));
         ui->comboBox->setItemText(i, (*sockets)[i]->socketName);
     }
@@ -46,13 +45,12 @@ void Dialog::updateUi()
 void Dialog::discovered()
 {
     ui->comboBox->clear();
-    for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
-    {
+    for (std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i) {
         connect(*i, &Socket::stateChanged, this, &Dialog::updateUi);
         connect(ui->toggleButton, &QPushButton::clicked, this, &Dialog::togglePower);
         ui->comboBox->addItem("Socket");
     }
-    
+
     updateUi();
 }
 

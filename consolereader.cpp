@@ -20,7 +20,7 @@
 #include "consolereader.h"
 #include "server.h"
 
-ConsoleReader::ConsoleReader ( std::vector<Socket*> *sockets_vector )
+ConsoleReader::ConsoleReader(std::vector<Socket*> *sockets_vector)
 {
     sockets = sockets_vector;
     start();
@@ -36,13 +36,10 @@ void ConsoleReader::run()
     unsigned int number = 0;
     bool cont = true;
 
-    while ( cont )
-    {
+    while (cont) {
         std::cin >> command;
-        switch ( command[0] )
-        {
-        case 'a':
-        {
+        switch (command[0]) {
+        case 'a': {
             std::cout << "Please set your Orvibo socket to pair mode (rapidly blinking blue light) and wait until new wifi network (WiWo-S20) appears" << std::endl;
             std::string ssid, password;
             std::cout << "Wireless name (\"c\" for current wifi): ";
@@ -52,8 +49,7 @@ void ConsoleReader::run()
             Server *server = new Server(48899, QByteArray::fromStdString(ssid), QByteArray::fromStdString(password)); // HF-LPB100 chip can be controlled over port 48899
             break;
         }
-        case 'A':
-        {
+        case 'A': {
             std::cout << "Please set your Orvibo socket to factory reset mode (rapidly blinking red light)" << std::endl;
             std::string password;
             std::cout << "Password: ";
@@ -76,8 +72,7 @@ void ConsoleReader::run()
         case 'D':
             (*sockets) [number]->discover();
             break;
-        case 'n':
-        {
+        case 'n': {
             std::string name;
             std::cout << "Please enter a new name: ";
             std::cin >> name;
@@ -93,8 +88,7 @@ void ConsoleReader::run()
             else if (command == "on")
                 (*sockets) [number]->powerOn();
             break;
-        case 'P':
-        {
+        case 'P': {
             std::string password;
             std::cout << "Please enter a new password: ";
             std::cin >> password;
@@ -103,15 +97,14 @@ void ConsoleReader::run()
         }
         case 'q':
             cont = false;
-            emit ( QCoreApplication::quit() );
+            emit(QCoreApplication::quit());
             break;
         case 's':
             std::cin >> number;
             --number; // count from 0
             listSockets();
             break;
-        case 't':
-        {
+        case 't': {
             int timezone;
             std::cout << "Please enter a new timezone (integer from -11 to 12): ";
             std::cin >> timezone;
@@ -126,12 +119,11 @@ void ConsoleReader::run()
 
 void ConsoleReader::listSockets()
 {
-    for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
-    {
+    for (std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i) {
         std::cout << "_____________________________________________________________________________\n" << std::endl;
-        std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ( (*i)->powered ? "On" : "Off" ) << std::endl;
+        std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ((*i)->powered ? "On" : "Off") << std::endl;
         std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << (*i)->timeZone.toHex().toStdString() << std::endl;
-        std::cout << "Countdown: " << (*i)->countdown << " " << ( (*i)->countdownEnabled ? "(enabled)" : "(disabled)" )  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
+        std::cout << "Countdown: " << (*i)->countdown << " " << ((*i)->countdownEnabled ? "(enabled)" : "(disabled)")  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
     std::cout << "a - add unpaired socket (WiFi needed)\n";
@@ -148,8 +140,7 @@ void ConsoleReader::listSockets()
 
 void ConsoleReader::connectSignals()
 {
-    for ( unsigned i = 0; i < sockets->size(); ++i )
-    {
+    for (unsigned i = 0; i < sockets->size(); ++i) {
         connect((*sockets)[i], &Socket::stateChanged, this, &ConsoleReader::listSockets);
     }
 }

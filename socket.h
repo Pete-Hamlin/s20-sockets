@@ -27,29 +27,29 @@
 
 class QUdpSocket;
 
-const QByteArray magicKey = QByteArray::fromHex ( "68 64" ); // recognize datagrams from the socket
+const QByteArray magicKey = QByteArray::fromHex("68 64");    // recognize datagrams from the socket
 
 class Socket : public QThread
 {
-Q_OBJECT
+    Q_OBJECT
 
 Q_SIGNALS:
     void stateChanged();
     void datagramQueued();
 
 public:
-    Socket ( QHostAddress, QByteArray ); // from discovery packet
+    Socket(QHostAddress, QByteArray);    // from discovery packet
     ~Socket();
     void toggle();
     void powerOff();
     void powerOn();
     void discover();
     void tableData();
-    void changeSocketName ( QString newName );
-    void changeSocketPassword ( QString newPassword );
-    void changeTimezone ( int8_t newTimezone );
-    void setCountDown ( uint16_t countdown );
-    bool parseReply ( QByteArray );
+    void changeSocketName(QString newName);
+    void changeSocketPassword(QString newPassword);
+    void changeTimezone(int8_t newTimezone);
+    void setCountDown(uint16_t countdown);
+    bool parseReply(QByteArray);
 
     QHostAddress ip;
     QByteArray mac;
@@ -72,13 +72,15 @@ private:
         TimingData,
         TableModify,
         MaxCommands
-};
+    };
 
-    void sendDatagram ( Datagram );
+    void sendDatagram(Datagram);
     void subscribe();
-    void processQueue() { start(); }
+    void processQueue() {
+        start();
+    }
     void run();
-    void writeSocketData (QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown);
+    void writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown);
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];
@@ -89,7 +91,7 @@ private:
     QByteArray firmwareVersion;
     QByteArray wifiFirmwareVersion; // CC3000 firmware version
     QByteArray staticServerIP;
-    QByteArray port = QByteArray::fromHex ( "10:27" ); // 10000 in hex (little endian)
+    QByteArray port = QByteArray::fromHex("10:27");    // 10000 in hex (little endian)
     QByteArray domainServerName;
     QByteArray localIP; // same as QHostAddress ip but in QByteArray, maybe fix later...
     QByteArray localGatewayIP;
@@ -99,10 +101,10 @@ private:
     QByteArray timeZoneSet;
     QByteArray socketTableNumber, socketTableVersion, timingTableNumber, timingTableVersion; // FIXME: not used yet
 
-    const QByteArray twenties = QByteArray::fromHex ( "20 20 20 20 20 20" ); // mac address padding, 6 spaces
-    const QByteArray zeros = QByteArray::fromHex ( "00 00 00 00" );
-    const QByteArray zero = QByteArray::fromHex ( "00" );
-    const QByteArray one = QByteArray::fromHex ( "01" );
+    const QByteArray twenties = QByteArray::fromHex("20 20 20 20 20 20");    // mac address padding, 6 spaces
+    const QByteArray zeros = QByteArray::fromHex("00 00 00 00");
+    const QByteArray zero = QByteArray::fromHex("00");
+    const QByteArray one = QByteArray::fromHex("01");
 
     QUdpSocket *udpSocket;
     QTimer *subscribeTimer;

@@ -24,15 +24,15 @@
 #include "consolereader.h"
 #include "server.h"
 
-Server::Server ( std::vector<Socket*> *sockets_vector )
+Server::Server(std::vector<Socket*> *sockets_vector)
 {
     sockets = sockets_vector;
     udpSocketGet = new QUdpSocket();
-    udpSocketGet->bind ( QHostAddress::Any, 10000 );
-    connect ( udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
+    udpSocketGet->bind(QHostAddress::Any, 10000);
+    connect(udpSocketGet, &QUdpSocket::readyRead, this, &Server::readPendingDatagrams);
     discoverSockets();
     QTimer *discoverTimer = new QTimer(this);
-    discoverTimer->setInterval(1*60*1000); // 1 min
+    discoverTimer->setInterval(1 * 60 * 1000); // 1 min
     discoverTimer->setSingleShot(false);
     connect(discoverTimer, &QTimer::timeout, this, &Server::discoverSockets);
     discoverTimer->start();
@@ -48,25 +48,20 @@ Server::Server(uint16_t port, QByteArray ssid, QByteArray password)
     ncm->updateConfigurations();
     *cfgInitial = ncm->defaultConfiguration();
 
-    if (ssid == "c")
-    {
+    if (ssid == "c") {
         ssid = cfgInitial->name().toLocal8Bit();
         qDebug() << "SSID unspecified, using current network: " << ssid;
     }
 
     bool stop = false;
-    while ( !stop )
-    {
+    while (!stop) {
         QThread::sleep(1);
 
         auto nc = ncm->allConfigurations();
 
-        for (auto &x : nc)
-        {
-            if (x.bearerType() == QNetworkConfiguration::BearerWLAN)
-            {
-                if (x.name() == "WiWo-S20")
-                {
+    for (auto & x : nc) {
+            if (x.bearerType() == QNetworkConfiguration::BearerWLAN) {
+                if (x.name() == "WiWo-S20") {
                     qWarning() << "Connecting to WiWo-S20 wireless";
                     cfg = &x;
                     stop = true;
@@ -83,24 +78,24 @@ Server::Server(uint16_t port, QByteArray ssid, QByteArray password)
 
     QUdpSocket *udpSocketSend = new QUdpSocket();
     udpSocketGet = new QUdpSocket();
-    udpSocketGet->bind ( QHostAddress::Any, port);
+    udpSocketGet->bind(QHostAddress::Any, port);
 
     QByteArray reply;
 
-    udpSocketGet->writeDatagram ( QByteArray::fromStdString("HF-A11ASSISTHREAD"), QHostAddress::Broadcast, port );
+    udpSocketGet->writeDatagram(QByteArray::fromStdString("HF-A11ASSISTHREAD"), QHostAddress::Broadcast, port);
     reply = listen(QByteArray::fromStdString("HF-A11ASSISTHREAD"));
     QList<QByteArray> list = reply.split(',');
     QHostAddress ip(QString::fromLatin1(list[0]));
     qWarning() << "IP: " << ip.toString();
-    udpSocketGet->writeDatagram ( QByteArray::fromStdString("+ok"), ip, port );
-    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSSSID=") + ssid + QByteArray::fromStdString("\r"), ip, port );
+    udpSocketGet->writeDatagram(QByteArray::fromStdString("+ok"), ip, port);
+    udpSocketGet->writeDatagram(QByteArray::fromStdString("AT+WSSSID=") + ssid + QByteArray::fromStdString("\r"), ip, port);
     listen();
-    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WSKEY=WPA2PSK,AES,") + password + QByteArray::fromStdString("\r"), ip, port ); // FIXME: support different security settings
+    udpSocketGet->writeDatagram(QByteArray::fromStdString("AT+WSKEY=WPA2PSK,AES,") + password + QByteArray::fromStdString("\r"), ip, port);    // FIXME: support different security settings
     // OPEN, SHARED, WPAPSK......NONE, WEP, TKIP, AES
     listen();
-    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+WMODE=STA\r"), ip, port );
+    udpSocketGet->writeDatagram(QByteArray::fromStdString("AT+WMODE=STA\r"), ip, port);
     listen();
-    udpSocketGet->writeDatagram ( QByteArray::fromStdString("AT+Z\r"), ip, port ); // reboot
+    udpSocketGet->writeDatagram(QByteArray::fromStdString("AT+Z\r"), ip, port);    // reboot
     session->close();
     // FIXME: discover the new socket
     qWarning() << "Finished";
@@ -122,15 +117,12 @@ QByteArray Server::listen(QByteArray message)
     QHostAddress sender;
     quint16 senderPort;
     bool stop = false;
-    while ( !stop )
-    {
+    while (!stop) {
         QThread::msleep(50);
-        while ( udpSocketGet->hasPendingDatagrams() )
-        {
-            reply.resize ( udpSocketGet->pendingDatagramSize() );
-            udpSocketGet->readDatagram ( reply.data(), reply.size(), &sender, &senderPort );
-            if (reply != message)
-            {
+        while (udpSocketGet->hasPendingDatagrams()) {
+            reply.resize(udpSocketGet->pendingDatagramSize());
+            udpSocketGet->readDatagram(reply.data(), reply.size(), &sender, &senderPort);
+            if (reply != message) {
                 stop = true;
             }
         }
@@ -145,44 +137,34 @@ void Server::run()
 
 void Server::readPendingDatagrams()
 {
-    while ( udpSocketGet->hasPendingDatagrams() )
-    {
+    while (udpSocketGet->hasPendingDatagrams()) {
         QByteArray reply, mac;
-        reply.resize ( udpSocketGet->pendingDatagramSize() );
+        reply.resize(udpSocketGet->pendingDatagramSize());
         QHostAddress sender;
         quint16 senderPort;
 
-        udpSocketGet->readDatagram ( reply.data(), reply.size(), &sender, &senderPort );
+        udpSocketGet->readDatagram(reply.data(), reply.size(), &sender, &senderPort);
 
-        if ( reply != discover && reply.left ( 2 ) == magicKey ) // check for Magic Key
-        {
-            if ( reply.mid ( 4, 2 ) == QStringLiteral("qa").toLatin1() || reply.mid ( 4, 2 ) == QStringLiteral("qg").toLatin1()) // Reply to discover packet
-            {
+        if (reply != discover && reply.left(2) == magicKey) {    // check for Magic Key
+            if (reply.mid(4, 2) == QStringLiteral("qa").toLatin1() || reply.mid(4, 2) == QStringLiteral("qg").toLatin1()) {      // Reply to discover packet
                 bool duplicate = false;
-                for ( std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i )
-                {
-                    if ( (*i)->ip == sender )
-                    {
+                for (std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i) {
+                    if ((*i)->ip == sender) {
                         duplicate = true;
                         break;
                     }
                 }
-                if ( !duplicate )
-                {
-                    Socket *socket = new Socket ( sender, reply );
-                    sockets->push_back ( socket );
+                if (!duplicate) {
+                    Socket *socket = new Socket(sender, reply);
+                    sockets->push_back(socket);
                     Q_EMIT discovered();
                 }
-                mac = reply.mid(7,6);
+                mac = reply.mid(7, 6);
+            } else {
+                mac = reply.mid(6, 6);
             }
-            else
-            {
-                mac = reply.mid(6,6);
-            }
-            for ( std::vector<Socket*>::iterator i = sockets->begin() ; i != sockets->end(); ++i )
-            {
-                if ( (*i)->mac == mac )
-                {
+            for (std::vector<Socket*>::iterator i = sockets->begin() ; i != sockets->end(); ++i) {
+                if ((*i)->mac == mac) {
                     (*i)->parseReply(reply);
                     break;
                 }
@@ -195,9 +177,9 @@ void Server::readPendingDatagrams()
 void Server::discoverSockets()
 {
     QUdpSocket *udpSocketSend = new QUdpSocket();
-    udpSocketSend->connectToHost ( QHostAddress::Broadcast, 10000 );
-    udpSocketSend->write ( discover );
-    udpSocketSend->write ( discover );
+    udpSocketSend->connectToHost(QHostAddress::Broadcast, 10000);
+    udpSocketSend->write(discover);
+    udpSocketSend->write(discover);
     udpSocketSend->disconnectFromHost();
     delete udpSocketSend;
 }
@@ -205,37 +187,31 @@ void Server::discoverSockets()
 void broadcastPassword(QString password)
 {
     QUdpSocket *udpSocket = new QUdpSocket();
-    udpSocket->connectToHost ( QHostAddress::Broadcast, 49999 );
+    udpSocket->connectToHost(QHostAddress::Broadcast, 49999);
     uint sleep = 15;
-    for (uint j=0; j < 4; ++j) // FIXME: stopping loop on discovery
-    {
+    for (uint j = 0; j < 4; ++j) { // FIXME: stopping loop on discovery
         qWarning() << j;
-        for (unsigned short int i = 0; i < 200; ++i)
-        {
-            udpSocket->write ( fives(76) );
+        for (unsigned short int i = 0; i < 200; ++i) {
+            udpSocket->write(fives(76));
             QThread::msleep(sleep);
         }
-        for (unsigned short int i = 0; i < 3; ++i)
-        {
-            udpSocket->write ( fives(89) );
+        for (unsigned short int i = 0; i < 3; ++i) {
+            udpSocket->write(fives(89));
             QThread::msleep(sleep);
         }
 
         QChar *data = password.data();
-        while (!data->isNull())
-        {
-            udpSocket->write( fives(data->unicode() + 76) );
+        while (!data->isNull()) {
+            udpSocket->write(fives(data->unicode() + 76));
             QThread::msleep(sleep);
             ++data;
         }
-        for (unsigned short int i = 0; i < 3; ++i)
-        {
-            udpSocket->write ( fives(86) );
+        for (unsigned short int i = 0; i < 3; ++i) {
+            udpSocket->write(fives(86));
             QThread::msleep(sleep);
         }
-        for (unsigned short int i = 0; i < 3; ++i)
-        {
-            udpSocket->write ( fives(332 + password.length()) );
+        for (unsigned short int i = 0; i < 3; ++i) {
+            udpSocket->write(fives(332 + password.length()));
             QThread::msleep(sleep);
         }
     }

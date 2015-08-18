@@ -26,7 +26,7 @@
 class ConsoleReader : public QThread
 {
 public:
-    ConsoleReader ( std::vector<Socket*> *sockets_vector );
+    ConsoleReader(std::vector<Socket*> *sockets_vector);
     void run();
     void listSockets();
     void connectSignals();
