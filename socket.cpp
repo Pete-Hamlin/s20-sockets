@@ -161,6 +161,12 @@ void Socket::setCountDown(uint16_t countdown)
     writeSocketData(socketName, remotePassword, timeZone, countdown);
 }
 
+void Socket::toggleCountDown()
+{
+    countdownEnabled=!countdownEnabled;
+    writeSocketData(socketName, remotePassword, timeZone, countdown);
+}
+
 void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown)
 {
     QByteArray countDown;

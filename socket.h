@@ -49,6 +49,7 @@ public:
     void changeSocketPassword(QString newPassword);
     void changeTimezone(int8_t newTimezone);
     void setCountDown(uint16_t countdown);
+    void toggleCountDown();
     bool parseReply(QByteArray);
 
     QHostAddress ip;

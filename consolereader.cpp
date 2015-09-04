@@ -64,7 +64,7 @@ void ConsoleReader::run()
             (*sockets) [number]->setCountDown(countdown);
             break;
         case 'C':
-            (*sockets) [number]->setCountDown(countdown);
+            (*sockets) [number]->toggleCountDown();
             break;
         case 'd':
             (*sockets) [number]->tableData();
