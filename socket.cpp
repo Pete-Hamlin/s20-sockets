@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <iostream>
 
+#include <QDataStream>
 #include <QMutex>
 #include <QThread>
 #include <QUdpSocket>
