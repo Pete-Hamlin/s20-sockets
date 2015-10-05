@@ -175,7 +175,7 @@ void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, Q
     stream1.setByteOrder(QDataStream::LittleEndian);
     stream1 << countdown;
 
-    QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + (countdownEnabled ? QByteArray::fromHex("01:00") : QByteArray::fromHex("00:ff")) + countDown + zeros + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
+    QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + zero + (countdownEnabled ? one : QByteArray::fromHex("ff")) + countDown + zeros + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
 
     QByteArray recordLength;
     QDataStream stream(&recordLength, QIODevice::WriteOnly);
