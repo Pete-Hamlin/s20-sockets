@@ -170,12 +170,9 @@ void Socket::toggleCountDown()
 
 void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown)
 {
-    QByteArray countDown;
-    QDataStream stream1(&countDown, QIODevice::WriteOnly);
-    stream1.setByteOrder(QDataStream::LittleEndian);
-    stream1 << countdown;
+    QByteArray countDown = intToHex(countdown);
 
-    QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + zero + (countdownEnabled ? one : QByteArray::fromHex("ff")) + countDown + zeros + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
+    QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + (countdownEnabled ? QByteArray::fromHex("01:00") : QByteArray::fromHex("00:ff")) + countDown + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
 
     QByteArray recordLength;
     QDataStream stream(&recordLength, QIODevice::WriteOnly);
@@ -315,4 +312,12 @@ bool Socket::parseReply(QByteArray reply)
     }
 
     return true;
+}
+
+QByteArray Socket::intToHex(uint16_t decimal) {
+    QByteArray hex;
+    QDataStream stream1(&hex, QIODevice::WriteOnly);
+    stream1.setByteOrder(QDataStream::LittleEndian);
+    stream1 << decimal;
+    return hex;
 }
