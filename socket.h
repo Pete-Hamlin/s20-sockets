@@ -82,7 +82,7 @@ private:
     }
     void run();
     void writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown);
-    QByteArray intToHex(uint16_t value);
+    QByteArray intToHex(uint16_t value, unsigned int length, bool littleEndian = true);
 
     QByteArray commandID[MaxCommands];
     QByteArray datagram[MaxCommands];

@@ -95,10 +95,9 @@ void Socket::run()
             commands.dequeue();
             retryCount = 0;
         }
-        QDataStream stream(&recordLength, QIODevice::WriteOnly);
-        stream.setByteOrder(QDataStream::BigEndian);
+
         uint16_t length = currentDatagram.length() + 4; // +4 for magicKey and total message length
-        stream << length;
+        recordLength = intToHex(length, 2, false);
 
         udpSocket->write(magicKey + recordLength + currentDatagram);
         previousDatagram = currentDatagram;
@@ -150,10 +149,7 @@ void Socket::changeSocketPassword(QString newPassword)
 
 void Socket::changeTimezone(int8_t newTimezone)
 {
-    QByteArray timezone;
-    QDataStream stream(&timezone, QIODevice::WriteOnly);
-    stream.setByteOrder(QDataStream::BigEndian);
-    stream << newTimezone;
+    QByteArray timezone = intToHex(newTimezone, 1); // timezone takes 1 byte
     writeSocketData(socketName, remotePassword, timezone, countdown);
 }
 
@@ -170,15 +166,11 @@ void Socket::toggleCountDown()
 
 void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown)
 {
-    QByteArray countDown = intToHex(countdown);
+    QByteArray countDown = intToHex(countdown, 2); // 2 bytes
 
     QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + timeZone + (countdownEnabled ? QByteArray::fromHex("01:00") : QByteArray::fromHex("00:ff")) + countDown + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
 
-    QByteArray recordLength;
-    QDataStream stream(&recordLength, QIODevice::WriteOnly);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    uint16_t length = record.length();
-    stream << length;
+    QByteArray recordLength = intToHex(record.length(), 2); // 2 bytes
 
     datagram[TableModify] = commandID[TableModify] + mac + twenties + zeros + QByteArray::fromHex("04:00:01") /*table number and unknown*/ + recordLength + record;
     sendDatagram(TableModify);
@@ -314,10 +306,11 @@ bool Socket::parseReply(QByteArray reply)
     return true;
 }
 
-QByteArray Socket::intToHex(uint16_t decimal) {
+// length in bytes
+QByteArray Socket::intToHex(uint16_t decimal, unsigned int length, bool littleEndian) {
     QByteArray hex;
-    QDataStream stream1(&hex, QIODevice::WriteOnly);
-    stream1.setByteOrder(QDataStream::LittleEndian);
-    stream1 << decimal;
-    return hex;
+    QDataStream stream(&hex, QIODevice::WriteOnly);
+    littleEndian ? stream.setByteOrder(QDataStream::LittleEndian) : stream.setByteOrder(QDataStream::BigEndian);
+    stream << decimal;
+    return littleEndian ? hex.left(length) : hex.right(length);
 }
