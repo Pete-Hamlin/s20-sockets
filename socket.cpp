@@ -216,11 +216,7 @@ bool Socket::parseReply(QByteArray reply)
     switch (datagram) {
     case QueryAll:
     case Discover: {
-        QByteArray timeArray = reply.right(5).left(4);
-        QDataStream stream(&timeArray, QIODevice::ReadOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        uint32_t time;
-        stream >> time;
+        uint32_t time = hexToInt(reply.right(5).left(4));
         socketDateTime.setDate(QDate(1900, 01, 01)); // midnight 1900-01-01
         socketDateTime.setTime(QTime(0, 0, 0));
         socketDateTime = socketDateTime.addSecs(time);
@@ -280,10 +276,7 @@ bool Socket::parseReply(QByteArray reply)
         ++index;
         countdownEnabled = reply.mid(index, 2) == QByteArray::fromHex("01:00");
         index += 2;
-        QByteArray countDown = reply.mid(index, 2);
-        QDataStream stream(&countDown, QIODevice::ReadOnly);
-        stream.setByteOrder(QDataStream::LittleEndian);
-        stream >> countdown;
+        countdown = hexToInt(reply.mid(index, 2));
         Q_EMIT stateChanged();
         break;
     }
@@ -307,10 +300,31 @@ bool Socket::parseReply(QByteArray reply)
 }
 
 // length in bytes
-QByteArray Socket::intToHex(uint16_t decimal, unsigned int length, bool littleEndian) {
+QByteArray Socket::intToHex(unsigned int decimal, unsigned int length, bool littleEndian) {
     QByteArray hex;
     QDataStream stream(&hex, QIODevice::WriteOnly);
     littleEndian ? stream.setByteOrder(QDataStream::LittleEndian) : stream.setByteOrder(QDataStream::BigEndian);
     stream << decimal;
     return littleEndian ? hex.left(length) : hex.right(length);
+}
+
+int Socket::hexToInt(QByteArray hex, bool littleEndian) {
+    QDataStream stream(&hex, QIODevice::ReadOnly);
+    littleEndian ? stream.setByteOrder(QDataStream::LittleEndian) : stream.setByteOrder(QDataStream::BigEndian);
+    switch (hex.length()) {
+    case 1:
+        uint8_t value;
+        stream >> value;
+        return value;
+    case 2:
+        uint16_t value2;
+        stream >> value2;
+        return value2;
+    case 4:
+        uint32_t value4;
+        stream >> value4;
+        return value4;
+    default:
+        return 0;
+    }
 }
