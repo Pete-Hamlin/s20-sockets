@@ -56,7 +56,7 @@ public:
     QByteArray mac;
     bool powered;
     QByteArray socketName, remotePassword;
-    QByteArray timeZone;
+    int8_t timezone;
     uint16_t countdown;
     bool countdownEnabled;
     QDateTime socketDateTime;
@@ -81,7 +81,7 @@ private:
         start();
     }
     void run();
-    void writeSocketData(QByteArray socketName, QByteArray remotePassword, QByteArray timeZone, uint16_t countdown);
+    void writeSocketData(QByteArray socketName, QByteArray remotePassword, int8_t timeZone, uint16_t countdown);
     QByteArray intToHex(unsigned int value, unsigned int length, bool littleEndian = true);
     int hexToInt(QByteArray value, bool littleEndian = true);
 
