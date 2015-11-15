@@ -157,7 +157,7 @@ void Server::readPendingDatagrams()
                 if (!duplicate) {
                     Socket *socket = new Socket(sender, reply);
                     sockets->push_back(socket);
-                    std::sort(sockets->begin(), sockets->end(), [](const Socket* a, const Socket* b) -> bool { return QString(a->socketName) < QString(b->socketName); });
+                    std::sort(sockets->begin(), sockets->end(), [](const Socket* a, const Socket* b) -> bool { return QString::compare(QString(a->mac), QString(b->mac)) < 0 ? true : false; }); // socket name is not known yet
                     Q_EMIT discovered();
                 }
                 mac = reply.mid(7, 6);
