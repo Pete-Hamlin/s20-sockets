@@ -272,6 +272,7 @@ bool Socket::parseReply(QByteArray reply)
         timeZoneSet = reply.mid(index, 1);
         ++index;
         timezone = hexToInt(reply.mid(index, 1));
+	socketDateTime = socketDateTime.addSecs(timezone *3600);
         ++index;
         countdownEnabled = reply.mid(index, 2) == QByteArray::fromHex("01:00");
         index += 2;

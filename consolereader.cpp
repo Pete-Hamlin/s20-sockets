@@ -33,7 +33,7 @@ void ConsoleReader::run()
     listSockets();
 
     std::string command;
-    unsigned int number = 0;
+    activeSocket = 0;
     bool cont = true;
 
     while (cont) {
@@ -61,38 +61,38 @@ void ConsoleReader::run()
             uint16_t countdown;
             std::cout << "Countdown time in seconds: ";
             std::cin >> countdown;
-            (*sockets) [number]->setCountDown(countdown);
+            (*sockets) [activeSocket]->setCountDown(countdown);
             break;
         case 'C':
-            (*sockets) [number]->toggleCountDown();
+            (*sockets) [activeSocket]->toggleCountDown();
             break;
         case 'd':
-            (*sockets) [number]->tableData();
+            (*sockets) [activeSocket]->tableData();
             break;
         case 'D':
-            (*sockets) [number]->discover();
+            (*sockets) [activeSocket]->discover();
             break;
         case 'n': {
             std::string name;
             std::cout << "Please enter a new name: ";
             std::cin >> name;
-            (*sockets) [number]->changeSocketName(QString::fromStdString(name));
+            (*sockets) [activeSocket]->changeSocketName(QString::fromStdString(name));
             break;
         }
         case 'p':
-            (*sockets) [number]->toggle();
+            (*sockets) [activeSocket]->toggle();
             break;
         case 'o':
             if (command == "off")
-                (*sockets) [number]->powerOff();
+                (*sockets) [activeSocket]->powerOff();
             else if (command == "on")
-                (*sockets) [number]->powerOn();
+                (*sockets) [activeSocket]->powerOn();
             break;
         case 'P': {
             std::string password;
             std::cout << "Please enter a new password: ";
             std::cin >> password;
-            (*sockets) [number]->changeSocketPassword(QString::fromStdString(password));
+            (*sockets) [activeSocket]->changeSocketPassword(QString::fromStdString(password));
             break;
         }
         case 'q':
@@ -100,8 +100,8 @@ void ConsoleReader::run()
             emit(QCoreApplication::quit());
             break;
         case 's':
-            std::cin >> number;
-            --number; // count from 0
+            std::cin >> activeSocket;
+            --activeSocket; // count from 0
             listSockets();
             break;
         case 't': {
@@ -109,7 +109,7 @@ void ConsoleReader::run()
             std::cout << "Please enter a new timezone (integer from -11 to 12): ";
             std::cin >> timezone;
             if (timezone >= -11 && timezone <= 12)
-                (*sockets) [number]->changeTimezone(timezone);
+                (*sockets) [activeSocket]->changeTimezone(timezone);
             else
                 std::cout << "Invalid timezone";
             break;
@@ -129,6 +129,9 @@ void ConsoleReader::listSockets()
         std::cout << "Countdown: " << (*i)->countdown << " " << ((*i)->countdownEnabled ? "(enabled)" : "(disabled)")  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
+    if (sockets->size() > 0) {
+        std::cout << "Active socket: " << (*sockets) [activeSocket]->socketName.toStdString() << std::endl;
+    }
     std::cout << "a - add unpaired socket (WiFi needed)\n";
     std::cout << "A - add unpaired socket (no WiFi needed)\n";
     std::cout << "c - set countdown\n";
@@ -137,7 +140,7 @@ void ConsoleReader::listSockets()
     std::cout << "D - resend discovery packet to the current socket\n";
     std::cout << "n - change socket name (max 16 characters)\n";
     std::cout << "p - toggle power state (there are also \"on\" and \"off\" commands)\n";
-    std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - pick another socket (default is 1)\nt - change timezone" << std::endl;
+    std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - select another socket (default is 1)\nt - change timezone" << std::endl;
     std::cout << "Enter command: " << std::endl;
 }
 

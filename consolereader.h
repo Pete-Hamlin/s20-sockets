@@ -33,6 +33,7 @@ public:
 
 private:
     std::vector<Socket*> *sockets;
+    unsigned int activeSocket;
 };
 
 #endif  /* CONSOLEREADER_H */
