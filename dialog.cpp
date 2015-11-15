@@ -26,7 +26,9 @@ Dialog::Dialog(std::vector<Socket*> *sockets_vector, QWidget *parent) :
 {
     sockets = sockets_vector;
     ui->setupUi(this);
-
+    connect(ui->toggleButton, &QPushButton::clicked, this, &Dialog::togglePower);
+    connect(ui->comboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &Dialog::updateUi);
+    updateUi();
 }
 
 Dialog::~Dialog()
@@ -37,8 +39,14 @@ Dialog::~Dialog()
 void Dialog::updateUi()
 {
     for (unsigned int i = 0; i < (*sockets).size(); ++i) {
-        ui->toggleButton->setText((*sockets)[i]->powered ? QStringLiteral("Turn off") : QStringLiteral("Turn on"));
         ui->comboBox->setItemText(i, (*sockets)[i]->socketName);
+    }
+    if (ui->comboBox->currentIndex() != -1) {
+        ui->toggleButton->setEnabled(true);
+        ui->toggleButton->setText((*sockets)[ui->comboBox->currentIndex()]->powered ? QStringLiteral("Turn off") : QStringLiteral("Turn on"));
+    }
+    else {
+        ui->toggleButton->setEnabled(false);
     }
 }
 
@@ -47,7 +55,6 @@ void Dialog::discovered()
     ui->comboBox->clear();
     for (std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i) {
         connect(*i, &Socket::stateChanged, this, &Dialog::updateUi);
-        connect(ui->toggleButton, &QPushButton::clicked, this, &Dialog::togglePower);
         ui->comboBox->addItem("Socket");
     }
 
