@@ -108,7 +108,10 @@ void ConsoleReader::run()
             int timezone;
             std::cout << "Please enter a new timezone (integer from -11 to 12): ";
             std::cin >> timezone;
-            (*sockets) [number]->changeTimezone(timezone);
+            if (timezone >= -11 && timezone <= 12)
+                (*sockets) [number]->changeTimezone(timezone);
+            else
+                std::cout << "Invalid timezone";
             break;
         }
         default:
