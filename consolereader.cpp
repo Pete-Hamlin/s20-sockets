@@ -124,7 +124,7 @@ void ConsoleReader::listSockets()
 {
     for (std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i) {
         std::cout << "_____________________________________________________________________________\n" << std::endl;
-        std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ((*i)->powered ? "On" : "Off") << std::endl;
+        std::cout << "IP Address: " << (*i)->ip.toString().remove("::ffff:").toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ((*i)->powered ? "On" : "Off") << std::endl;
         std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << +(*i)->timezone << std::endl;
         std::cout << "Off timer: " << (*i)->offTime << " " << ((*i)->offTimerEnabled ? "(enabled)" : "(disabled)")  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
     }
