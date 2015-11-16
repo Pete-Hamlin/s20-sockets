@@ -40,6 +40,7 @@ private:
     Ui::Dialog *ui;
     std::vector<Socket*> *sockets;
     void togglePower();
+    void toggleOffTimer();
 };
 
 #endif // DIALOG_H

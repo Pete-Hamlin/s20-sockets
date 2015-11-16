@@ -27,8 +27,10 @@ Dialog::Dialog(std::vector<Socket*> *sockets_vector, QWidget *parent) :
     sockets = sockets_vector;
     ui->setupUi(this);
     connect(ui->toggleButton, &QPushButton::clicked, this, &Dialog::togglePower);
-    connect(ui->comboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &Dialog::updateUi);
+    connect(ui->socketsComboBox, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &Dialog::updateUi);
+    connect(ui->offTimerEnabled, &QCheckBox::released, this, &Dialog::toggleOffTimer);
     updateUi();
+    ui->offTimer->setEnabled(false);
 }
 
 Dialog::~Dialog()
@@ -39,23 +41,27 @@ Dialog::~Dialog()
 void Dialog::updateUi()
 {
     for (unsigned int i = 0; i < (*sockets).size(); ++i) {
-        ui->comboBox->setItemText(i, (*sockets)[i]->socketName);
+        ui->socketsComboBox->setItemText(i, (*sockets)[i]->socketName);
     }
-    if (ui->comboBox->currentIndex() != -1) {
+    unsigned int index = ui->socketsComboBox->currentIndex();
+    if (index != -1) {
         ui->toggleButton->setEnabled(true);
-        ui->toggleButton->setText((*sockets)[ui->comboBox->currentIndex()]->powered ? QStringLiteral("Turn off") : QStringLiteral("Turn on"));
+        ui->offTimerEnabled->setEnabled(true);
+        ui->toggleButton->setText((*sockets)[index]->powered ? QStringLiteral("Turn off") : QStringLiteral("Turn on"));
+        ui->offTimerEnabled->setChecked((*sockets)[index]->offTimerEnabled);
     }
     else {
         ui->toggleButton->setEnabled(false);
+        ui->offTimerEnabled->setEnabled(false);
     }
 }
 
 void Dialog::discovered()
 {
-    ui->comboBox->clear();
+    ui->socketsComboBox->clear();
     for (std::vector<Socket*>::const_iterator i = sockets->begin() ; i != sockets->end(); ++i) {
         connect(*i, &Socket::stateChanged, this, &Dialog::updateUi);
-        ui->comboBox->addItem("Socket");
+        ui->socketsComboBox->addItem("Socket");
     }
 
     updateUi();
@@ -63,5 +69,11 @@ void Dialog::discovered()
 
 void Dialog::togglePower()
 {
-    (*sockets)[ui->comboBox->currentIndex()]->toggle();
+    (*sockets)[ui->socketsComboBox->currentIndex()]->toggle();
+}
+
+void Dialog::toggleOffTimer()
+{
+    ui->offTimerEnabled->setCheckState(Qt::PartiallyChecked);
+    (*sockets)[ui->socketsComboBox->currentIndex()]->toggleOffTimer();
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>434</width>
-    <height>269</height>
+    <width>464</width>
+    <height>279</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,40 +16,74 @@
   <widget class="QPushButton" name="toggleButton">
    <property name="geometry">
     <rect>
-     <x>300</x>
-     <y>200</y>
+     <x>360</x>
+     <y>220</y>
      <width>84</width>
      <height>33</height>
     </rect>
    </property>
    <property name="text">
-    <string></string>
+    <string/>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>30</x>
      <y>10</y>
-     <width>351</width>
-     <height>33</height>
+     <width>419</width>
+     <height>100</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
      <widget class="QLabel" name="label">
       <property name="text">
        <string>Sockets:</string>
       </property>
      </widget>
     </item>
-    <item>
-     <widget class="QComboBox" name="comboBox">
+    <item row="0" column="1" colspan="2">
+     <widget class="QComboBox" name="socketsComboBox">
       <property name="minimumSize">
        <size>
         <width>250</width>
         <height>0</height>
        </size>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QTimeEdit" name="offTimer">
+      <property name="maximumTime">
+       <time>
+        <hour>18</hour>
+        <minute>12</minute>
+        <second>15</second>
+       </time>
+      </property>
+      <property name="displayFormat">
+       <string>HH:mm:ss</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="offTimerLabel">
+      <property name="toolTip">
+       <string>Automatic switch off on a specified delay after switch on</string>
+      </property>
+      <property name="text">
+       <string>Switch off timer:</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QCheckBox" name="offTimerEnabled">
+      <property name="text">
+       <string>Enable</string>
+      </property>
+      <property name="tristate">
+       <bool>true</bool>
       </property>
      </widget>
     </item>
