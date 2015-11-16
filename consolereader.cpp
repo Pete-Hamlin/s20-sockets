@@ -57,15 +57,6 @@ void ConsoleReader::run()
             broadcastPassword(QString::fromStdString(password)); // HF-LPB100 chip can be controlled over port 49999
             break;
         }
-        case 'c':
-            uint16_t countdown;
-            std::cout << "Countdown time in seconds: ";
-            std::cin >> countdown;
-            (*sockets) [activeSocket]->setCountDown(countdown);
-            break;
-        case 'C':
-            (*sockets) [activeSocket]->toggleCountDown();
-            break;
         case 'd':
             (*sockets) [activeSocket]->tableData();
             break;
@@ -87,6 +78,15 @@ void ConsoleReader::run()
                 (*sockets) [activeSocket]->powerOff();
             else if (command == "on")
                 (*sockets) [activeSocket]->powerOn();
+            else {
+                uint16_t offTime;
+                std::cout << "Off time in seconds: ";
+                std::cin >> offTime;
+                (*sockets) [activeSocket]->setOffTimer(offTime);
+            }
+            break;
+        case 'O':
+            (*sockets) [activeSocket]->toggleOffTimer();
             break;
         case 'P': {
             std::string password;
@@ -126,7 +126,7 @@ void ConsoleReader::listSockets()
         std::cout << "_____________________________________________________________________________\n" << std::endl;
         std::cout << "IP Address: " << (*i)->ip.toString().toStdString() << "\t MAC Address: " << (*i)->mac.toHex().toStdString()  << "\t Power: " << ((*i)->powered ? "On" : "Off") << std::endl;
         std::cout << "Socket Name: " << (*i)->socketName.toStdString() << "\t Remote Password: " << (*i)->remotePassword.toStdString() << "\t Timezone: " << +(*i)->timezone << std::endl;
-        std::cout << "Countdown: " << (*i)->countdown << " " << ((*i)->countdownEnabled ? "(enabled)" : "(disabled)")  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
+        std::cout << "Off timer: " << (*i)->offTime << " " << ((*i)->offTimerEnabled ? "(enabled)" : "(disabled)")  << "\t\t Time: " << (*i)->socketDateTime.toString().toStdString() << std::endl;
     }
     std::cout << "_____________________________________________________________________________\n" << std::endl;
     if (sockets->size() > 0) {
@@ -134,13 +134,14 @@ void ConsoleReader::listSockets()
     }
     std::cout << "a - add unpaired socket (WiFi needed)\n";
     std::cout << "A - add unpaired socket (no WiFi needed)\n";
-    std::cout << "c - set countdown\n";
-    std::cout << "C - enable/disable countdown\n";
     std::cout << "d - update table data\n";
     std::cout << "D - resend discovery packet to the current socket\n";
     std::cout << "n - change socket name (max 16 characters)\n";
+    std::cout << "o - set switch off timer\n";
+    std::cout << "O - enable/disable switch off timer\n";
     std::cout << "p - toggle power state (there are also \"on\" and \"off\" commands)\n";
-    std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - select another socket (default is 1)\nt - change timezone" << std::endl;
+    std::cout << "P - change remote password (max 12 characters)\nq - quit\ns - select another socket (default is 1)\n";
+    std::cout << "t - change timezone" << std::endl;
     std::cout << "Enter command: " << std::endl;
 }
 

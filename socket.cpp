@@ -138,36 +138,34 @@ void Socket::powerOn()
 void Socket::changeSocketName(QString newName)
 {
     QByteArray name = newName.toLatin1().leftJustified(16, ' ', true);
-    writeSocketData(name, remotePassword, timezone, countdown);
+    writeSocketData(name, remotePassword, timezone, offTime);
 }
 
 void Socket::changeSocketPassword(QString newPassword)
 {
     QByteArray password = newPassword.toLatin1().leftJustified(12, ' ', true);
-    writeSocketData(socketName, password, timezone, countdown);
+    writeSocketData(socketName, password, timezone, offTime);
 }
 
 void Socket::changeTimezone(int8_t newTimezone)
 {
-    writeSocketData(socketName, remotePassword, newTimezone, countdown);
+    writeSocketData(socketName, remotePassword, newTimezone, offTime);
 }
 
-void Socket::setCountDown(uint16_t countdown)
+void Socket::setOffTimer(uint16_t offTime)
 {
-    writeSocketData(socketName, remotePassword, timezone, countdown);
+    writeSocketData(socketName, remotePassword, timezone, offTime);
 }
 
-void Socket::toggleCountDown()
+void Socket::toggleOffTimer()
 {
-    countdownEnabled=!countdownEnabled;
-    writeSocketData(socketName, remotePassword, timezone, countdown);
+    offTimerEnabled=!offTimerEnabled;
+    writeSocketData(socketName, remotePassword, timezone, offTime);
 }
 
-void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, int8_t timezone, uint16_t countdown)
+void Socket::writeSocketData(QByteArray socketName, QByteArray remotePassword, int8_t timezone, uint16_t offTime)
 {
-    QByteArray countDown = intToHex(countdown, 2); // 2 bytes
-
-    QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + intToHex(timezone, 1) + (countdownEnabled ? QByteArray::fromHex("01:00") : QByteArray::fromHex("00:ff")) + countDown + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
+    QByteArray record = QByteArray::fromHex("01:00") /* record number = 1*/ + versionID + mac + twenties + rmac + twenties + remotePassword + socketName + icon + hardwareVersion + firmwareVersion + wifiFirmwareVersion + port + staticServerIP + port + domainServerName + localIP + localGatewayIP + localNetMask + dhcpNode + discoverable + timeZoneSet + intToHex(timezone, 1) + (offTimerEnabled ? QByteArray::fromHex("01:00") : QByteArray::fromHex("00:ff")) + intToHex(offTime, 2) + zeros + zeros + zeros + QStringLiteral("000000000000000000000000000000").toLocal8Bit();
 
     QByteArray recordLength = intToHex(record.length(), 2); // 2 bytes
 
@@ -274,9 +272,9 @@ bool Socket::parseReply(QByteArray reply)
         timezone = hexToInt(reply.mid(index, 1));
 	socketDateTime = socketDateTime.addSecs(timezone *3600);
         ++index;
-        countdownEnabled = reply.mid(index, 2) == QByteArray::fromHex("01:00");
+        offTimerEnabled = reply.mid(index, 2) == QByteArray::fromHex("01:00");
         index += 2;
-        countdown = hexToInt(reply.mid(index, 2));
+        offTime = hexToInt(reply.mid(index, 2));
         Q_EMIT stateChanged();
         break;
     }
